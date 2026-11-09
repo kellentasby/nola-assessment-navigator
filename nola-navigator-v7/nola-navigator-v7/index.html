@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Student-prototype chatbot explaining Orleans Parish property assessments, exemptions, tax bills and appeals in plain English, with a cited source on every fact.">
+<title>NOLA Assessment Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@600;700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: friendly civic help desk. Color-coded topic cards up top, chat on the left,
+   "dates / who to call / words to know" helpers on the right. Each topic keeps one color everywhere. */
+:root{
+  --bg:#f4f6fa; --surface:#ffffff; --ink:#1c2433; --muted:#5b6475; --line:#dde2ea;
+  --brand:#16324f; --brand-ink:#ffffff;
+  --notice-bg:#fff4d6; --notice-ink:#5c4300;
+  --user:#16324f; --user-ink:#ffffff;
+  /* topic colors: c = strong, t = tint background */
+  --value-c:#2563c9;  --value-t:#e8f0fd;
+  --bill-c:#17855a;   --bill-t:#e3f5ec;
+  --exempt-c:#7a4bc4; --exempt-t:#f0e9fb;
+  --reval-c:#c26a0a;  --reval-t:#fdf0df;
+  --appeal-c:#c23a4b; --appeal-t:#fde8ea;
+  --general-c:#4b5a70; --general-t:#eef1f5;
+  --prop-c:#0f7b83;   --prop-t:#e0f3f4;
+  --closed:#7a8394; --closed-t:#eceef2;
+  --display:"Zilla Slab", Georgia, "Times New Roman", serif;
+  --body:"Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10151d; --surface:#171e29; --ink:#e7ebf2; --muted:#a2abbb; --line:#2a3342;
+  --brand:#9cc2ff; --brand-ink:#0d1520; --notice-bg:#2e260f; --notice-ink:#f3d88c;
+  --user:#2b4a72; --user-ink:#ffffff;
+  --value-c:#7fb0ff; --value-t:#17253d; --bill-c:#5fd29f; --bill-t:#132b22;
+  --exempt-c:#bb9bf3; --exempt-t:#241b38; --reval-c:#f2a54c; --reval-t:#33230f;
+  --appeal-c:#f28a97; --appeal-t:#38181d; --general-c:#b3bdcc; --general-t:#1f2733;
+  --prop-c:#5cc9d1; --prop-t:#123033;
+  --closed:#9aa3b2; --closed-t:#232b37; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10151d; --surface:#171e29; --ink:#e7ebf2; --muted:#a2abbb; --line:#2a3342;
+  --brand:#9cc2ff; --brand-ink:#0d1520; --notice-bg:#2e260f; --notice-ink:#f3d88c;
+  --user:#2b4a72; --user-ink:#ffffff;
+  --value-c:#7fb0ff; --value-t:#17253d; --bill-c:#5fd29f; --bill-t:#132b22;
+  --exempt-c:#bb9bf3; --exempt-t:#241b38; --reval-c:#f2a54c; --reval-t:#33230f;
+  --appeal-c:#f28a97; --appeal-t:#38181d; --general-c:#b3bdcc; --general-t:#1f2733;
+  --prop-c:#5cc9d1; --prop-t:#123033;
+  --closed:#9aa3b2; --closed-t:#232b37; color-scheme:dark}
+*{box-sizing:border-box}
+html{color-scheme:light}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.6}
+[hidden]{display:none!important}
+a{color:var(--value-c)}
+:focus-visible{outline:3px solid var(--reval-c);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* topic color plumbing: any element with data-topic gets --c / --t */
+[data-topic="value"]{--c:var(--value-c);--t:var(--value-t)}
+[data-topic="bill"]{--c:var(--bill-c);--t:var(--bill-t)}
+[data-topic="exempt"]{--c:var(--exempt-c);--t:var(--exempt-t)}
+[data-topic="reval"]{--c:var(--reval-c);--t:var(--reval-t)}
+[data-topic="appeal"]{--c:var(--appeal-c);--t:var(--appeal-t)}
+[data-topic="general"]{--c:var(--general-c);--t:var(--general-t)}
+[data-topic="prop"]{--c:var(--prop-c);--t:var(--prop-t)}
+
+.notice{background:var(--notice-bg);color:var(--notice-ink);font-size:14px}
+.notice .wrap{padding-block:9px}
+header .wrap{padding-block:28px 8px}
+h1{font-family:var(--display);font-weight:700;font-size:clamp(28px,4.5vw,40px);line-height:1.1;margin:0;color:var(--brand);text-wrap:balance}
+.lede{margin:8px 0 0;font-size:18px;color:var(--ink);max-width:62ch}
+.how{display:flex;flex-wrap:wrap;gap:8px 22px;margin:14px 0 0;padding:0;list-style:none;font-size:14.5px;color:var(--muted)}
+.how li{display:flex;gap:8px;align-items:center}
+.how b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font-size:13px}
+
+h2.section{font-family:var(--display);font-size:22px;margin:26px 0 12px;color:var(--ink)}
+.topics{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:12px}
+.topic{background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--c);border-radius:12px;padding:14px 14px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.topic h3{margin:0;font-size:17px;display:flex;align-items:center;gap:8px;color:var(--c)}
+.topic h3 .dot{width:12px;height:12px;border-radius:50%;background:var(--c);flex:none}
+.topic p{margin:0;font-size:14px;color:var(--muted)}
+.qbtn{font:inherit;font-size:14.5px;text-align:left;line-height:1.35;background:var(--t);color:var(--ink);border:1px solid transparent;border-radius:9px;padding:9px 11px;cursor:pointer}
+.qbtn:hover{border-color:var(--c)}
+.qbtn::before{content:"→ ";color:var(--c);font-weight:700}
+
+main .wrap{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:24px;padding-block:6px 48px;align-items:start}
+@media (max-width:900px){main .wrap{grid-template-columns:minmax(0,1fr)}}
+
+.chat{background:var(--surface);border:1px solid var(--line);border-radius:14px;display:flex;flex-direction:column;min-width:0}
+.chat-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.chat-head strong{font-size:17px}
+.ghost{font:inherit;font-size:14px;background:none;border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:5px 11px;cursor:pointer}
+.ghost:hover{color:var(--ink);border-color:var(--muted)}
+.log{padding:18px;display:flex;flex-direction:column;gap:18px;min-height:300px}
+.msg{min-width:0}
+.msg.user{align-self:flex-end;background:var(--user);color:var(--user-ink);padding:10px 15px;border-radius:16px 16px 4px 16px;max-width:85%}
+.bot{border-left:5px solid var(--c);padding-left:14px}
+.tag{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--c);margin-bottom:6px}
+.tag::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--c)}
+.short{background:var(--t);border-radius:10px;padding:12px 14px;margin:0 0 12px;font-size:17px;line-height:1.5}
+.short .lbl{display:block;font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--c);margin-bottom:2px}
+.body p{margin:0 0 .7em}
+.body ul,.body ol{margin:0 0 .8em;padding-left:1.3em}
+.body li{margin-bottom:.3em}
+.body ol li::marker{color:var(--c);font-weight:700}
+.body strong{color:var(--ink)}
+.call{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:6px;font-size:15px}
+.call .ico{flex:none;width:28px;height:28px;border-radius:50%;background:var(--bill-t);color:var(--bill-c);display:grid;place-items:center}
+.cite{font-family:var(--mono);font-size:11.5px;background:var(--general-t);color:var(--general-c);border-radius:5px;padding:1px 5px;text-decoration:none;white-space:nowrap;vertical-align:1px}
+.cite:hover{background:var(--c,var(--value-c));color:var(--surface)}
+details.srcs{margin-top:10px;font-size:14px}
+details.srcs summary{cursor:pointer;color:var(--muted);font-weight:600}
+details.srcs ol{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:5px}
+.sid{font-family:var(--mono);font-size:12px;color:var(--general-c);margin-right:6px}
+.note{font-size:13.5px;color:var(--muted)}
+.loading{display:flex;align-items:center;gap:10px;color:var(--muted)}
+.dots{display:inline-flex;gap:4px}.dots i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+@media (prefers-reduced-motion:no-preference){.dots i{animation:b 1.2s infinite ease-in-out}.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}@keyframes b{0%,80%,100%{opacity:.25}40%{opacity:1}}}
+
+form{display:flex;gap:10px;border-top:1px solid var(--line);padding:14px}
+textarea{flex:1;min-width:0;font:inherit;resize:vertical;min-height:52px;max-height:180px;border:2px solid var(--line);border-radius:10px;padding:11px 12px;background:var(--bg);color:var(--ink)}
+textarea:focus{border-color:var(--brand);outline:none}
+.send{font:inherit;font-weight:700;font-size:16px;background:var(--brand);color:var(--brand-ink);border:0;border-radius:10px;padding:0 22px;cursor:pointer}
+.send[disabled]{opacity:.5;cursor:default}
+.hint{font-size:13px;color:var(--muted);padding:0 18px 12px;margin:0}
+
+aside{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.panel h2{font-family:var(--display);font-size:20px;margin:0 0 10px}
+.dates{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.dates li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:start}
+.dates .what{font-weight:600;font-size:15px}
+.dates .when{grid-column:1;font-size:14px;color:var(--muted)}
+.chip{grid-row:1/span 2;grid-column:2;font-size:12px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap}
+.chip.soon{background:var(--bill-t);color:var(--bill-c)}
+.chip.closed{background:var(--closed-t);color:var(--closed)}
+.chip.est{background:var(--reval-t);color:var(--reval-c)}
+.chip.if{background:var(--appeal-t);color:var(--appeal-c)}
+.office{border-left:4px solid var(--c);padding:4px 0 4px 12px;margin-bottom:12px}
+.office:last-child{margin-bottom:0}
+.office b{display:block;font-size:15px}
+.office .for{font-size:13.5px;color:var(--muted)}
+.office .num{font-family:var(--mono);font-size:15px;color:var(--c);user-select:all}
+dl.words{margin:0;display:grid;gap:10px}
+dl.words dt{font-weight:700;font-size:15px}
+dl.words dd{margin:0;font-size:14px;color:var(--muted)}
+details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cursor:pointer}
+.ledger{font-size:13.5px;display:grid;gap:8px;margin:10px 0 0;padding:0;list-style:none}
+.ledger .d{color:var(--muted);font-size:12.5px}
+.lookup{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-top:5px solid var(--prop-c);border-radius:12px;padding:16px}
+.lookup h3{margin:0;font-size:18px;color:var(--prop-c);display:flex;align-items:center;gap:8px}
+.lookup h3 .dot{width:12px;height:12px;border-radius:50%;background:var(--prop-c)}
+.lookup p{margin:4px 0 10px;font-size:14px;color:var(--muted)}
+.lk-row{display:flex;gap:10px;flex-wrap:wrap}
+.lk-row textarea{flex:1 1 320px;min-height:74px}
+.lk-btns{display:flex;flex-direction:column;gap:8px}
+.btn-prop{font:inherit;font-weight:700;background:var(--prop-c);color:#fff;border:0;border-radius:10px;padding:10px 18px;cursor:pointer}
+.btn-prop[disabled]{opacity:.5;cursor:default}
+.btn-ghost{font:inherit;font-size:14px;background:none;border:1px solid var(--prop-c);color:var(--prop-c);border-radius:10px;padding:8px 14px;cursor:pointer}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:14px}
+.pcard{border:1px solid var(--line);border-left:5px solid var(--prop-c);border-radius:10px;padding:12px 14px;background:var(--bg);min-width:0;font-size:14px}
+.pcard.miss{border-left-color:var(--appeal-c)}
+.pcard h4{margin:0;font-size:16px}
+.pcard .sub{color:var(--muted);font-size:12.5px;margin-bottom:8px}
+.pcard dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0}
+.pcard dt{color:var(--muted)}
+.pcard dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pcard .mkt{margin-top:8px;padding:8px 10px;border-radius:8px;border:1px dashed var(--reval-c);font-size:13px;line-height:1.45}
+.pcard .mkt b{color:var(--reval-c)}
+.about .qbtn{display:block;width:100%;margin:6px 0;background:var(--prop-t)}
+.about ol{padding-left:20px;margin:6px 0;font-size:14px}
+.pcard .tax{margin-top:8px;padding:8px 10px;border-radius:8px;background:var(--prop-t);display:flex;justify-content:space-between;font-weight:700}
+.pcard .cmp{margin-top:8px;font-size:13px;color:var(--muted)}
+.pcard ul{margin:8px 0 0;padding-left:1.1em;font-size:13px}
+.pcard .opt{font:inherit;font-size:13px;margin:4px 4px 0 0;background:var(--prop-t);border:1px solid var(--prop-c);color:var(--ink);border-radius:8px;padding:4px 8px;cursor:pointer}
+.lk-note{font-size:12.5px;color:var(--muted);margin-top:10px}
+.facts{margin:10px 0 0;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;align-items:center}
+.facts legend{font-weight:700;font-size:13px;color:var(--prop-c);padding:0 4px}
+.facts label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.facts select{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:6px;padding:2px 4px;background:var(--surface);color:var(--ink)}
+.pcard .eval{margin-top:6px;font-size:13px;color:var(--muted)}
+.pcard .todo{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px}
+.pcard .todo b{font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--prop-c)}
+.pcard .todo ol{margin:4px 0 0;padding-left:1.2em;font-size:13px}
+.pcard .todo li{margin-bottom:2px}
+.pcard .save{color:var(--bill-c);font-weight:700}
+.pcard .plan{margin-top:10px;width:100%}
+</style>
+</head>
+<body>
+
+<div class="notice"><div class="wrap"><strong>Student project.</strong> Made by Kellen Tasby for a Tulane real estate course. Not run by the Orleans Parish Assessor or the City of New Orleans. This is general information, not legal or tax advice.</div></div>
+
+<header><div class="wrap">
+  <h1>NOLA Assessment Navigator</h1>
+  <p class="lede">Questions about your New Orleans property value, tax bill, exemptions or appeals? Ask here and get a plain-English answer, with the public source for every fact.</p>
+  <ol class="how">
+    <li><b>1</b>Pick a topic or type a question</li>
+    <li><b>2</b>Read the short answer first</li>
+    <li><b>3</b>Tap a source tag to check it, or call the office listed</li>
+  </ol>
+
+  <h2 class="section">Start with a topic</h2>
+  <div class="topics" id="topics"></div>
+  <section class="lookup" aria-label="Look up properties">
+    <h3><span class="dot"></span>Look up my property</h3>
+    <p>Type one or more New Orleans addresses (one per line, up to 10) or a parcel ID. You'll see the 2026 roll's values, exemptions, an estimated 2026 tax, a neighborhood comparison, and what you could do next. Tick the boxes below to tailor the steps.</p>
+    <div class="lk-row">
+      <label for="addrs" hidden>Addresses</label>
+      <textarea id="addrs" placeholder="2413 Nashville Ave&#10;4713 Prytania St&#10;619 Saint Roch Ave"></textarea>
+      <div class="lk-btns"><button class="btn-prop" id="lkBtn" type="button">Look up</button><button class="btn-ghost" id="lkExplain" type="button" hidden>Explain these in the chat</button></div>
+    </div>
+    <fieldset class="facts" id="facts">
+      <legend>About you (optional, not saved)</legend>
+      <label><input type="checkbox" id="f_lives"> I live here (my primary home)</label>
+      <label><input type="checkbox" id="f_65"> I'm 65 or older</label>
+      <label><input type="checkbox" id="f_dis"> I have a disability</label>
+      <label>Disabled veteran: <select id="f_vet"><option value="">No</option><option value="50">50-69% rating</option><option value="70">70-99% rating</option><option value="100">100% / unemployable</option></select></label>
+      <label><input type="checkbox" id="f_val"> I think my value is too high</label>
+    </fieldset>
+    <div class="cards" id="cards"></div>
+    <p class="lk-note" id="lkNote" hidden>From the 2026 Orleans tax roll (Louisiana Tax Commission). Values are as of Jan 1, 2023. Taxes are estimates at 2026 rates and leave out neighborhood district fees. Owner names are not shown. Not an official record: confirm with the Assessor, (504) 754-8811.</p>
+  </section>
+</div></header>
+
+<main><div class="wrap">
+  <section class="chat" aria-label="Ask a question">
+    <div class="chat-head"><strong>Your questions</strong><button class="ghost" id="reset" type="button">Start over</button></div>
+    <div class="log" id="log" aria-live="polite"></div>
+    <form id="f">
+      <label for="q" hidden>Your question</label>
+      <textarea id="q" rows="2" placeholder="Ask a question, or name addresses: What is the tax on 2413 Nashville Ave?"></textarea>
+      <button class="send" id="send" type="submit">Ask</button>
+    </form>
+    <p class="hint">Please don't type your name, address or other personal details.</p>
+  </section>
+
+  <aside>
+    <div class="panel">
+      <h2>Important dates</h2>
+      <ul class="dates">
+        <li><span class="what">Property tax bill due</span><span class="when">January 31 each year <a class="cite" href="#src-S3">S3</a></span><span class="chip soon">Next: Jan 31</span></li>
+        <li><span class="what">2026 appeal window</span><span class="when">Closed Aug 20, 2026 (2027 tax year) <a class="cite" href="#src-S5">S5</a></span><span class="chip closed">Closed</span></li>
+        <li><span class="what">New values and next appeal window</span><span class="when">Expected summer 2027 with the reassessment <a class="cite" href="#src-S7">S7</a></span><span class="chip est">Estimate</span></li>
+        <li><span class="what">Appeal to the La. Tax Commission</span><span class="when">Within 10 business days of a Board of Review decision <a class="cite" href="#src-S1">S1</a></span><span class="chip if">If you appealed</span></li>
+      </ul>
+    </div>
+
+    <div class="panel about" data-topic="prop">
+      <h2>About this project's data</h2>
+      <p class="note">Ask the chatbot how it was built and tested:</p>
+      <button class="qbtn" type="button" data-about>What did the exploratory data analysis of the tax roll find?</button>
+      <button class="qbtn" type="button" data-about>What's in the data dictionary, and what couldn't you figure out?</button>
+      <button class="qbtn" type="button" data-about>How does address matching work, and how well did it test?</button>
+      <button class="qbtn" type="button" data-about>What outside data did you pull, and how?</button>
+      <button class="qbtn" type="button" data-about>What were the 10 test questions and how did you do?</button>
+      <button class="qbtn" type="button" data-about>What's the link to the live chatbot?</button>
+      <details><summary>The 10 test questions</summary><ol>
+        <li><button class="qbtn" type="button" data-about>When is my property tax bill due?</button></li>
+        <li><button class="qbtn" type="button" data-about>How do I turn assessed value and millage into my tax bill? Show an example.</button></li>
+        <li><button class="qbtn" type="button" data-about>How do I apply for the homestead exemption?</button></li>
+        <li><button class="qbtn" type="button" data-about>I'm 65. Can my assessment be frozen?</button></li>
+        <li><button class="qbtn" type="button" data-about>I'm a veteran with a 70% rating. What exemption can I get?</button></li>
+        <li><button class="qbtn" type="button" data-about>What does the 2027 reassessment mean for me?</button></li>
+        <li><button class="qbtn" type="button" data-about>I missed the appeal deadline. What can I do now?</button></li>
+        <li><button class="qbtn" type="button" data-about>What is the assessed value of 2413 Nashville Ave?</button></li>
+        <li><button class="qbtn" type="button" data-about>Should I appeal my assessment?</button></li>
+        <li><button class="qbtn" type="button" data-about>What is the property tax rate in Jefferson Parish?</button></li>
+      </ol></details>
+    </div>
+
+    <div class="panel">
+      <h2>Who to call</h2>
+      <div class="office" data-topic="value"><b>Orleans Parish Assessor</b><span class="for">Your value, homestead, senior freeze</span><br><span class="num">(504) 754-8811</span> · <a href="https://www.nolaassessor.com" target="_blank" rel="noopener">nolaassessor.com</a></div>
+      <div class="office" data-topic="appeal"><b>City Council / Board of Review</b><span class="for">Appeal hearings and decisions</span><br><span class="num">(504) 658-1080</span></div>
+      <div class="office" data-topic="bill"><b>Bureau of Treasury</b><span class="for">Your tax bill and payments</span><br><span class="num">(504) 658-1712</span></div>
+    </div>
+
+    <div class="panel">
+      <h2>Words to know</h2>
+      <dl class="words">
+        <dt>Market value</dt><dd>What the Assessor estimates your property would sell for. <a class="cite" href="#src-S1">S1</a></dd>
+        <dt>Assessed value</dt><dd>10% of market value for homes and land. Taxes start from this number. <a class="cite" href="#src-S1">S1</a></dd>
+        <dt>Homestead exemption</dt><dd>Takes $7,500 off the assessed value of the home you live in. <a class="cite" href="#src-S2">S2</a></dd>
+        <dt>Mill</dt><dd>$1 of tax for every $1,000 of taxable value. <a class="cite" href="#src-S2">S2</a></dd>
+        <dt>Board of Review</dt><dd>The City Council group that hears value appeals. <a class="cite" href="#src-S1">S1</a></dd>
+      </dl>
+    </div>
+
+    <div class="panel">
+      <details class="all"><summary>All sources</summary><ul class="ledger" id="ledger"></ul></details>
+    </div>
+  </aside>
+</div></main>
+
+<script type="module">
+import { KB } from "./kb.mjs";
+const BYID = Object.fromEntries(KB.map(s=>[s.id,s]));
+
+const TOPICS = [
+  {id:"value",  name:"My home's value",  blurb:"How the Assessor sets it", qs:["How does the Assessor decide what my house is worth?","Why did my value go up when I didn't change anything?"]},
+  {id:"bill",   name:"My tax bill",      blurb:"From value to dollars", qs:["How do I turn assessed value and millage into my tax bill? Show an example.","When is my tax bill due and how do I pay?"]},
+  {id:"exempt", name:"Exemptions",       blurb:"Ways to lower the bill", qs:["How do I apply for the homestead exemption?","I'm 65. Can my assessment be frozen?"]},
+  {id:"reval",  name:"2027 reassessment",blurb:"What's changing next", qs:["What does the 2027 reassessment mean for me?","Will my taxes go up after the reassessment?"]},
+  {id:"appeal", name:"Appeals",          blurb:"If you disagree with your value", qs:["How do I appeal my assessment, and what's the deadline?","I missed the appeal deadline. What can I do now?"]},
+];
+const TOPIC_NAME = Object.fromEntries(TOPICS.map(t=>[t.id,t.name])); TOPIC_NAME.general="General"; TOPIC_NAME.prop="My property";
+const KEYS = {
+  appeal:/appeal|board of review|deadline|hearing|tax commission|disagree|contest/i,
+  reval:/reassess|reapprais|2027|2028|new value|rollback|roll forward/i,
+  exempt:/homestead|exempt|freeze|special assessment|senior|65|veteran|disab/i,
+  bill:/bill|millage|mill\b|mills|pay|due|calculat|interest|treasury/i,
+  value:/worth|value|apprais|market|assessor decide|cama|neighborhood/i,
+};
+const ADDR_HINT=/\b\d{1,5}\s+[A-Za-z]/;
+function topicOf(q){if(ADDR_HINT.test(q)&&/\b(st|street|ave|avenue|blvd|boulevard|dr|drive|rd|road|hwy|highway|pl|place|ct|court|ln|lane)\b/i.test(q))return "prop";for(const [k,re] of Object.entries(KEYS)) if(re.test(q)) return k; return "general";}
+
+const $=s=>document.querySelector(s);
+const log=$("#log"), q=$("#q"), send=$("#send");
+let turns=[], busy=false;
+
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function cites(html){
+  return html.replace(/\[((?:S\d+)(?:\s*[,;]\s*S\d+)*)\]/g,(m,ids)=>ids.split(/[,;]\s*/).map(id=>{id=id.trim();const s=BYID[id];return s?`<a class="cite" href="${s.url}" target="_blank" rel="noopener" title="${esc(s.title)} (${esc(s.org)})">${id}</a>`:""}).join(" "));
+}
+const inline = t => cites(t.replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>"));
+
+// Turns the model's text into: short-answer box, details, numbered steps, "talk to a person" box
+function render(text){
+  const lines=esc(text).split(/\n/);
+  let short="", call="", out="", list=null, para=[];
+  const flush=()=>{if(para.length){out+="<p>"+inline(para.join(" "))+"</p>";para=[]}};
+  const close=()=>{if(list){out+=`</${list}>`;list=null}};
+  for(const raw of lines){
+    const l=raw.trim().replace(/^#+\s*/,"");
+    let m;
+    if(m=l.match(/^\**short answer:?\**:?\s*(.*)$/i)){flush();close();short+=(short?" ":"")+m[1];continue}
+    if(m=l.match(/^\**talk to a person:?\**:?\s*(.*)$/i)){flush();close();call=m[1];continue}
+    if(m=l.match(/^[-*•]\s+(.*)$/)){flush();if(list!=="ul"){close();out+="<ul>";list="ul"}out+="<li>"+inline(m[1])+"</li>";continue}
+    if(m=l.match(/^\d+[.)]\s+(.*)$/)){flush();if(list!=="ol"){close();out+="<ol>";list="ol"}out+="<li>"+inline(m[1])+"</li>";continue}
+    close();
+    if(!l){flush();continue}
+    para.push(l);
+  }
+  flush();close();
+  return (short?`<div class="short"><span class="lbl">Short answer</span>${inline(short)}</div>`:"")+out+
+    (call?`<div class="call"><span class="ico" aria-hidden="true">☎</span><div><strong>Talk to a person:</strong> ${inline(call)}</div></div>`:"");
+}
+function usedIds(text){const set=new Set();for(const m of String(text).matchAll(/S\d+/g)) if(BYID[m[0]]) set.add(m[0]);return [...set].sort((a,b)=>+a.slice(1)-+b.slice(1))}
+function srcList(ids){
+  if(!ids.length) return "";
+  return `<details class="srcs"><summary>Where this came from (${ids.length} source${ids.length>1?"s":""})</summary><ol>${ids.map(id=>{const s=BYID[id];return `<li><span class="sid">${id}</span><a href="${s.url}" target="_blank" rel="noopener">${esc(s.title)}</a> <span class="note">${esc(s.org)}, ${esc(s.date)}</span></li>`}).join("")}</ol></details>`;
+}
+function addUser(text){const d=document.createElement("div");d.className="msg user";d.textContent=text;log.appendChild(d);return d}
+function addBot(topic, html){
+  const d=document.createElement("div"); d.className="msg bot"; d.dataset.topic=topic;
+  d.innerHTML=`<div class="tag">${esc(TOPIC_NAME[topic])}</div><div class="body">${html}</div>`;
+  log.appendChild(d); return d;
+}
+
+// Fallback when the AI service is unavailable: closest source passages
+const STOP=new Set("the a an of to and or is are do does i my me how what when where why can for in on it be with if this that about will much get".split(" "));
+function offlineAnswer(question){
+  const terms=(question.toLowerCase().match(/[a-z0-9$]+/g)||[]).filter(t=>!STOP.has(t)&&t.length>2);
+  const hits=KB.map(s=>{const hay=(s.title+" "+s.text).toLowerCase();let sc=0;for(const t of terms){sc+=Math.min(hay.split(t).length-1,4)}return {s,sc}}).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,2);
+  if(!hits.length) return {html:`<div class="short"><span class="lbl">Short answer</span>I don't know. None of my sources match that question.</div><div class="call"><span class="ico">☎</span><div><strong>Talk to a person:</strong> Orleans Parish Assessor, (504) 754-8811</div></div>`,ids:[]};
+  const html=hits.map(({s})=>`<p><a class="cite" href="${s.url}" target="_blank" rel="noopener">${s.id}</a> <strong>${esc(s.title)}:</strong> ${esc(s.text.slice(0,420))}${s.text.length>420?"…":""}</p>`).join("")+
+    `<div class="call"><span class="ico">☎</span><div><strong>Talk to a person:</strong> Orleans Parish Assessor, (504) 754-8811</div></div>`;
+  return {html,ids:hits.map(h=>h.s.id)};
+}
+
+const money=n=>n==null?"–":"$"+Number(n).toLocaleString("en-US",{maximumFractionDigits:0});
+const money2=n=>"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+function card(r){
+  if(r.status==="MATCHED"){
+    const ex=[["Homestead",r.homestead_exemption],["Veteran",r.veteran_exemption],["First responder",r.first_responder_exemption],["Other",r.other_exemption]].filter(x=>x[1]>0);
+    const w=r.ward_comparison;
+    return `<article class="pcard"><h4>${esc(r.roll_address)}</h4><div class="sub">Parcel ${esc(r.parcel_id)} · ${esc(r.bank)} · ward code ${esc(r.ward_code)} · ${esc((r.use||"").toLowerCase())}</div>
+    <dl><dt>Market value</dt><dd>${money(r.market_value)}</dd><dt>Land / building</dt><dd>${money(r.land_value)} / ${money(r.building_value)}</dd>
+    <dt>Assessed value</dt><dd>${money(r.assessed_value)}${r.assessed_pct_of_market!=null?` (${r.assessed_pct_of_market}%)`:""}</dd>
+    ${ex.map(x=>`<dt>${x[0]} exemption</dt><dd>−${money(x[1])}</dd>`).join("")}
+    <dt>Taxable value</dt><dd>${money(r.taxable_value)}</dd></dl>
+    <div class="tax"><span>Est. 2026 tax</span><span>${money2(r.est_2026_tax)}</span></div>
+    ${r.tax_eval?`<div class="eval">About ${money(r.tax_eval.monthly_equivalent)}/month · ${r.tax_eval.effective_rate_pct_of_market}% of market value${r.tax_eval.homestead_saves?` · homestead saves about ${money(r.tax_eval.homestead_saves)}`:""}</div>`:""}
+    ${w?`<div class="cmp">Ward median ${money(w.ward_median_value)} · this home is in the ${esc(w.value_band_in_ward)} of its ward</div>`:""}
+    ${mkt(r)}
+    ${r.flags&&r.flags.length?`<ul>${r.flags.map(f=>`<li>${esc(f)}</li>`).join("")}</ul>`:""}
+    ${r.options&&r.options.length?`<div class="todo"><b>What you could do</b><ol>${r.options.map(o=>`<li>${esc(o.title)}${o.est_savings?` <span class="save">(~${money(o.est_savings)}/yr)</span>`:""}</li>`).join("")}</ol></div>`:""}
+    ${r.options?`<button class="btn-ghost plan" type="button" data-plan="${esc(r.roll_address)}">Get my plan for this property</button>`:""}</article>`;
+  }
+  if(r.status==="AMBIGUOUS") return `<article class="pcard miss"><h4>${esc(r.input)}</h4><div class="sub">More than one match. ${esc(r.hint||"")}</div>${(r.options||[]).map(o=>{const pid=(o.match(/parcel ([^)]+)/)||[])[1]||"";return `<button class="opt" type="button" data-pid="${esc(pid)}">${esc(o)}</button>`}).join("")}</article>`;
+  return `<article class="pcard miss"><h4>${esc(r.input)}</h4><div class="sub">Not found. ${esc(r.reason||"")}</div></article>`;
+}
+function mkt(r){
+  const m=r.market; if(!m) return "";
+  const z=m.zillow, b=m.block_group, pct=n=>(n>0?"+":"")+n+"%";
+  let h=`<div class="mkt"><b>Neighborhood market</b> (context, not a value opinion)<br>`;
+  if(z) h+=`ZIP ${esc(m.zip)} typical home (Zillow): ${money(z.typical_value_jan_2023)} in Jan 2023 → ${money(z.typical_value_latest)} in ${esc(m.latest_month)} (${pct(z.change_since_jan_2023_pct)}; last 12 months ${pct(z.change_last_12_months_pct)}) <a class="cite" href="${BYID.S23.url}" target="_blank" rel="noopener">S23</a><br>`;
+  if(m.if_value_moved_with_zip) h+=`If this home moved with its ZIP: about ${money(m.if_value_moved_with_zip)} (Estimate, not the Assessor's next value)<br>`;
+  if(b) h+=`Census block group: median home value ${money(b.acs_median_home_value)} (owner-reported), median income ${money(b.median_household_income)}${m.vs_block_group_roll_median_pct!=null?`; this home is ${pct(m.vs_block_group_roll_median_pct)} vs. the area's roll median`:""} <a class="cite" href="${BYID.S24.url}" target="_blank" rel="noopener">S24</a>`;
+  if(m.note) h+=`<br>${esc(m.note)}`;
+  return h+`</div>`;
+}
+let lastLookup=[];
+function getFacts(){return {lives_here:$("#f_lives").checked, age65:$("#f_65").checked, disabled:$("#f_dis").checked, veteran_rating:$("#f_vet").value, value_concern:$("#f_val").checked};}
+async function runLookup(list){
+  const btn=$("#lkBtn"); btn.disabled=true; $("#cards").innerHTML=`<p class="note">Looking up ${list.length} propert${list.length>1?"ies":"y"}…</p>`;
+  try{
+    const r=await fetch("/api/lookup",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({addresses:list,facts:getFacts()})});
+    const d=await r.json(); if(!r.ok) throw new Error(d.error||"Lookup failed");
+    lastLookup=d.results; $("#cards").innerHTML=d.results.map(card).join("");
+    $("#lkNote").hidden=false; $("#lkExplain").hidden=!d.results.some(x=>x.status==="MATCHED");
+  }catch(e){ $("#cards").innerHTML=`<p class="note">The lookup didn't work just now. Try again, or call the Assessor at (504) 754-8811.</p>`; }
+  finally{btn.disabled=false}
+}
+
+async function ask(text, topicHint){
+  text=text.trim(); if(busy||!text) return;
+  busy=true; send.disabled=true; q.value="";
+  const topic=topicHint||topicOf(text);
+  addUser(text);
+  const bot=addBot(topic,`<div class="loading"><span class="dots"><i></i><i></i><i></i></span>Looking through the sources. This usually takes 5 to 15 seconds.</div>`);
+  bot.scrollIntoView({block:"nearest",behavior:"smooth"});
+  const body=bot.querySelector(".body");
+  turns.push({role:"user",content:text});
+  try{
+    const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({messages:turns.slice(-8),facts:getFacts()})});
+    const data=await r.json().catch(()=>({}));
+    if(!r.ok){ console.warn("AI answer failed", r.status, data); bot.dataset.diag=JSON.stringify({status:r.status,type:data.type,hint:data.hint}); throw Object.assign(new Error(data.error||"Request failed"),{status:r.status}); }
+    const props=(data.properties||[]).filter(p=>p.status==="MATCHED");
+    body.innerHTML=(props.length?`<div class="cards">${props.map(card).join("")}</div>`:"")+render(data.text)+srcList(usedIds(data.text))+(data.truncated?`<p class="note">This answer was cut short. Try asking a narrower question.</p>`:"");
+    turns.push({role:"assistant",content:data.text});
+  }catch(e){
+    turns.pop();
+    const {html,ids}=offlineAnswer(text);
+    body.innerHTML=`<p class="note">${e.status===429?"Lots of questions right now. Wait a minute and try again.":"The written answer isn't available right now."} Here's what my sources say instead:</p>`+html+srcList(ids);
+  }finally{busy=false;send.disabled=false;q.focus()}
+}
+
+function greet(){
+  log.innerHTML="";
+  addBot("general",`<div class="short"><span class="lbl">Hi there</span>I explain how New Orleans property values, tax bills, exemptions and appeals work, and I can look up properties by address. Pick a topic above, look up a property, or type a question below.</div><p class="note">I'm a student project, not an official service, so I can't give legal or tax advice. Every fact comes with a source tag like <a class="cite" href="${BYID.S2.url}" target="_blank" rel="noopener">S2</a> that you can tap to check.</p>`);
+}
+
+// Build the page
+$("#topics").innerHTML=TOPICS.map(t=>`<div class="topic" data-topic="${t.id}"><h3><span class="dot"></span>${esc(t.name)}</h3><p>${esc(t.blurb)}</p>${t.qs.map(x=>`<button class="qbtn" type="button" data-t="${t.id}">${esc(x)}</button>`).join("")}</div>`).join("");
+$("#topics").addEventListener("click",e=>{const b=e.target.closest(".qbtn");if(b){ask(b.textContent,b.dataset.t);$("#log").scrollIntoView({behavior:"smooth",block:"start"})}});
+document.querySelectorAll("[data-about]").forEach(b=>b.addEventListener("click",()=>{ask(b.textContent);$("#log").scrollIntoView({behavior:"smooth",block:"start"})}));
+$("#ledger").innerHTML=KB.map(s=>`<li id="src-${s.id}"><span class="sid">${s.id}</span><a href="${s.url}" target="_blank" rel="noopener">${esc(s.title)}</a><br><span class="d">${esc(s.org)} · ${esc(s.date)}</span></li>`).join("");
+$("#f").addEventListener("submit",e=>{e.preventDefault();ask(q.value)});
+q.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask(q.value)}});
+$("#reset").addEventListener("click",()=>{if(!busy){turns=[];greet();q.focus()}});
+document.querySelectorAll('.dates .cite, .words .cite').forEach(a=>a.addEventListener("click",()=>{$("details.all").open=true}));
+$("#lkBtn").addEventListener("click",()=>{const list=$("#addrs").value.split(/\n|;/).map(s=>s.trim()).filter(Boolean).slice(0,10); if(list.length) runLookup(list);});
+$("#cards").addEventListener("click",e=>{const b=e.target.closest(".opt"); if(b&&b.dataset.pid){ const list=$("#addrs").value.split(/\n|;/).map(s=>s.trim()).filter(Boolean); const i=lastLookup.findIndex(x=>x.status==="AMBIGUOUS"&&b.closest(".pcard").querySelector("h4").textContent===x.input); if(i>=0) list[i]=b.dataset.pid; $("#addrs").value=list.join("\n"); runLookup(list);}});
+$("#cards").addEventListener("click",e=>{const b=e.target.closest("[data-plan]"); if(!b) return; ask(`This is my property: ${b.dataset.plan}. Give me the details, my tax evaluation, and what I could do, with steps.`,"prop"); $("#log").scrollIntoView({behavior:"smooth",block:"start"});});
+$("#facts").addEventListener("change",()=>{ if(lastLookup.length){ const list=$("#addrs").value.split(/\n|;/).map(s=>s.trim()).filter(Boolean).slice(0,10); if(list.length) runLookup(list);} });
+$("#lkExplain").addEventListener("click",()=>{const m=lastLookup.filter(x=>x.status==="MATCHED"); if(!m.length) return; ask(`Explain the assessment and estimated tax for ${m.length>1?"these properties and compare them":"this property"}: ${m.map(x=>x.roll_address).join("; ")}`,"prop"); $("#log").scrollIntoView({behavior:"smooth",block:"start"});});
+greet();
+</script>
+</body>
+</html>

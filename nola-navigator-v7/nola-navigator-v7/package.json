@@ -1,0 +1,6 @@
+{
+  "name": "nola-assessment-navigator",
+  "private": true,
+  "type": "module",
+  "description": "Student prototype: Orleans Parish assessment chatbot (Tulane real estate course)"
+}
