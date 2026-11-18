@@ -140,7 +140,15 @@ aside{display:flex;flex-direction:column;gap:16px;min-width:0}
 .office b{display:block;font-size:15px}
 .office .for{font-size:13.5px;color:var(--muted)}
 .office .num{font-family:var(--mono);font-size:15px;color:var(--c);user-select:all}
-dl.words{margin:0;display:grid;gap:10px}
+dl.words{margin:0;display:grid;gap:10px;max-height:420px;overflow:auto;padding-right:4px}
+.dictq{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:9px 11px;margin:6px 0 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
+.econ .stat{border:1px solid var(--line);border-left:4px solid var(--bill-c);border-radius:9px;padding:8px 10px;margin:8px 0;background:var(--bg)}
+.econ .stat .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.econ .stat .k{font-weight:700;font-size:14px}
+.econ .stat .v{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--bill-c)}
+.econ .stat .d{font-size:13px;color:var(--muted);margin-top:3px}
+.econ .stat .src{font-size:12px;color:var(--muted);margin-top:3px}
+.econ .qbtn{display:block;width:100%;margin-top:8px}
 dl.words dt{font-weight:700;font-size:15px}
 dl.words dd{margin:0;font-size:14px;color:var(--muted)}
 details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cursor:pointer}
@@ -268,6 +276,13 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
       </ol></details>
     </div>
 
+    <div class="panel econ">
+      <h2>U.S. economy at a glance</h2>
+      <p class="note">National numbers for context, as of <span id="econAsof"></span>. They don't change this year's assessed value; they matter for the next reappraisal. <a class="cite" href="#src-S26">S26</a></p>
+      <div id="econ"></div>
+      <button class="qbtn" type="button" data-about>How does the economy affect my property taxes?</button>
+    </div>
+
     <div class="panel">
       <h2>Who to call</h2>
       <div class="office" data-topic="value"><b>Orleans Parish Assessor</b><span class="for">Your value, homestead, senior freeze</span><br><span class="num">(504) 754-8811</span> · <a href="https://www.nolaassessor.com" target="_blank" rel="noopener">nolaassessor.com</a></div>
@@ -276,14 +291,11 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
     </div>
 
     <div class="panel">
-      <h2>Words to know</h2>
-      <dl class="words">
-        <dt>Market value</dt><dd>What the Assessor estimates your property would sell for. <a class="cite" href="#src-S1">S1</a></dd>
-        <dt>Assessed value</dt><dd>10% of market value for homes and land. Taxes start from this number. <a class="cite" href="#src-S1">S1</a></dd>
-        <dt>Homestead exemption</dt><dd>Takes $7,500 off the assessed value of the home you live in. <a class="cite" href="#src-S2">S2</a></dd>
-        <dt>Mill</dt><dd>$1 of tax for every $1,000 of taxable value. <a class="cite" href="#src-S2">S2</a></dd>
-        <dt>Board of Review</dt><dd>The City Council group that hears value appeals. <a class="cite" href="#src-S1">S1</a></dd>
-      </dl>
+      <h2>Dictionary</h2>
+      <p class="note">Confused by a word? Search it here, or ask the chatbot "What does ___ mean?"</p>
+      <input id="dictQ" class="dictq" type="search" placeholder="Search words, e.g. millage" aria-label="Search the dictionary">
+      <dl class="words" id="dict"></dl>
+      <p class="note" id="dictNone" hidden>Not in the dictionary yet. Try asking the chatbot.</p>
     </div>
 
     <div class="panel">
@@ -294,6 +306,7 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
 
 <script type="module">
 import { KB } from "./kb.mjs";
+import { ECON, ECON_ASOF, GLOSSARY } from "./reference.mjs";
 const BYID = Object.fromEntries(KB.map(s=>[s.id,s]));
 
 const TOPICS = [
@@ -444,6 +457,18 @@ function greet(){
 // Build the page
 $("#topics").innerHTML=TOPICS.map(t=>`<div class="topic" data-topic="${t.id}"><h3><span class="dot"></span>${esc(t.name)}</h3><p>${esc(t.blurb)}</p>${t.qs.map(x=>`<button class="qbtn" type="button" data-t="${t.id}">${esc(x)}</button>`).join("")}</div>`).join("");
 $("#topics").addEventListener("click",e=>{const b=e.target.closest(".qbtn");if(b){ask(b.textContent,b.dataset.t);$("#log").scrollIntoView({behavior:"smooth",block:"start"})}});
+// U.S. economy panel
+$("#econAsof").textContent=ECON_ASOF;
+$("#econ").innerHTML=ECON.map(e=>`<div class="stat"><div class="top"><span class="k">${esc(e.key)}</span><span class="v">${esc(e.value)}</span></div><div class="d">${esc(e.detail.replace(/\s*\[S\d+\]/g,""))}</div><div class="src"><a href="${e.url}" target="_blank" rel="noopener">${esc(e.org)}</a> · ${esc(e.asof)}</div></div>`).join("");
+// Dictionary with search
+function drawDict(f){
+  const t=(f||"").trim().toLowerCase();
+  const rows=GLOSSARY.filter(([w,d])=>!t||w.toLowerCase().includes(t)||d.toLowerCase().includes(t));
+  $("#dict").innerHTML=rows.map(([w,d,src])=>`<dt>${esc(w)}</dt><dd>${esc(d)} <a class="cite" href="#src-${src}">${src}</a></dd>`).join("");
+  $("#dictNone").hidden=rows.length>0;
+}
+drawDict(""); $("#dictQ").addEventListener("input",e=>drawDict(e.target.value));
+$("#dict").addEventListener("click",e=>{if(e.target.closest(".cite")) $("details.all").open=true;});
 document.querySelectorAll("[data-about]").forEach(b=>b.addEventListener("click",()=>{ask(b.textContent);$("#log").scrollIntoView({behavior:"smooth",block:"start"})}));
 $("#ledger").innerHTML=KB.map(s=>`<li id="src-${s.id}"><span class="sid">${s.id}</span><a href="${s.url}" target="_blank" rel="noopener">${esc(s.title)}</a><br><span class="d">${esc(s.org)} · ${esc(s.date)}</span></li>`).join("");
 $("#f").addEventListener("submit",e=>{e.preventDefault();ask(q.value)});
