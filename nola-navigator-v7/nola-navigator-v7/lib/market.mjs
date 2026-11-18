@@ -1,6 +1,6 @@
 // Layer 3: market context for one looked-up property.
 // Data (built by build_layer3.py on the Mac, no owner names):
-//   data/geo.csv.gz       parcel ID -> census block group + ZIP (Census Geocoder points, ZIP by point-in-polygon on 2026 ZCTA shapes)
+//   data/geo.csv.gz       parcel ID -> census block group + ZIP + lat/lon (Census Geocoder points, ZIP by point-in-polygon on 2026 ZCTA shapes)
 //   data/zillow_zip.json  Zillow Home Value Index by Orleans ZIP, Jan 2023 vs latest month (S23)
 //   data/blockgroups.json ACS block-group profile + roll medians (S24)
 // Everything here is context, not a value opinion. "If it moved with the ZIP" is an Estimate, never a prediction of the Assessor's value.
@@ -13,8 +13,8 @@ function load() {
   GEO = new Map();
   const lines = gunzipSync(readFileSync(new URL("../data/geo.csv.gz", import.meta.url))).toString("utf8").split("\n");
   for (let i = 1; i < lines.length; i++) {
-    const [id, bg, zip] = lines[i].split(",");
-    if (id) GEO.set(id, { bg, zip: zip || null });
+    const [id, bg, zip, lat, lon] = lines[i].split(",");
+    if (id) GEO.set(id, { bg, zip: zip || null, lat: lat ? Number(lat) : null, lon: lon ? Number(lon) : null });
   }
   Z = JSON.parse(readFileSync(new URL("../data/zillow_zip.json", import.meta.url), "utf8"));
   BG = JSON.parse(readFileSync(new URL("../data/blockgroups.json", import.meta.url), "utf8"));
@@ -34,6 +34,7 @@ export function market(r) {
   }
   const z = g.zip && Z.zips[g.zip];
   out.zip = g.zip;
+  if (g.lat && g.lon) out.location = { lat: g.lat, lon: g.lon, source: "Census Geocoder point for the roll address (S24)" };
   if (z) {
     const factor = z.typical_value_latest / z.typical_value_jan_2023;
     out.zillow = { typical_value_jan_2023: z.typical_value_jan_2023, typical_value_latest: z.typical_value_latest,
