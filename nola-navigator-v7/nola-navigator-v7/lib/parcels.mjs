@@ -137,3 +137,28 @@ export function findAddresses(message, max = 10) {
   const found = [...String(message).matchAll(ADDR_RE)].map(m => m[0].trim());
   return [...new Set(found)].slice(0, max);
 }
+
+// Search-as-you-type for the property map: address or parcel ID prefix -> up to `max` roll records (no owner names).
+export function suggest(text, max = 8) {
+  load();
+  const t = String(text || "").toUpperCase().replace(/[.,#]/g, " ").replace(/\s+/g, " ").trim();
+  if (t.length < 2) return [];
+  const out = [];
+  const push = r => { if (out.length < max && !out.some(o => o.pid === r.pid)) out.push({ pid: r.pid, addr: r.addr, use: r.occ }); };
+  if (/^\d{1,3}W?\d{3,}$/.test(t.replace(/ /g, ""))) {
+    const q = t.replace(/ /g, "");
+    for (const [pid, r] of BY_PID) { if (pid.startsWith(q)) push(r); if (out.length >= max) break; }
+    if (out.length) return out;
+  }
+  const m = t.match(/^(\d+)[A-Z]?\s*(.*)$/);
+  if (m) {
+    const words = m[2].split(" ").filter(w => w && !DIRS.has(w));
+    const sq = words.join("");
+    const cand = (INDEX.get(m[1]) || []).slice().sort((a, b) => a.addr.localeCompare(b.addr));
+    for (const r of cand) if (!sq || r._squash.startsWith(sq) || r._squash.includes(sq) || r.addr.replace(/ /g, "").includes(sq)) push(r);
+    return out;
+  }
+  const sq = t.split(" ").filter(w => !DIRS.has(w)).join("");
+  for (const list of INDEX.values()) { for (const r of list) if (r._squash && r._squash.startsWith(sq)) { push(r); break; } if (out.length >= max) break; }
+  return out;
+}
