@@ -55,3 +55,19 @@ export function market(r) {
   out.citywide = { orleans_zip_median_change_since_jan_2023_pct: Z.meta.orleans_zip_median_change_since_jan_2023_pct };
   return out;
 }
+
+// Nearest geocoded parcel to a map click (for the clickable tax map). Returns a parcel ID or null.
+export function nearestParcel(lat, lon, maxMeters = 60) {
+  load();
+  const kx = 111320 * Math.cos(lat * Math.PI / 180), ky = 110540;
+  let best = null, bd = Infinity;
+  for (const [id, g] of GEO) {
+    if (g.lat == null) continue;
+    const dx = (g.lon - lon) * kx, dy = (g.lat - lat) * ky;
+    if (Math.abs(dx) > maxMeters || Math.abs(dy) > maxMeters) continue;
+    const d = dx * dx + dy * dy;
+    if (d < bd) { bd = d; best = id; }
+  }
+  return best ? { pid: best, meters: Math.round(Math.sqrt(bd)) } : null;
+}
+export function hasLocations() { load(); for (const g of GEO.values()) return g.lat != null; return false; }
