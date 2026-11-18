@@ -223,6 +223,27 @@ table.cmp td.hi{color:var(--prop-c);font-weight:800}
 .step .how{font-size:12.5px;color:var(--muted);margin-top:4px}
 .map{height:300px;border-radius:12px;border:1px solid var(--line);margin-top:12px;overflow:hidden;background:var(--bg)}
 .map.small{height:220px}
+.map.tall{height:420px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px;margin:4px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:16px;height:12px;border-radius:3px;display:inline-block;border:1px solid rgba(0,0,0,.2)}
+.pm-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
+.pm-search{position:relative;flex:1 1 260px}
+.pm-search input{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
+.pm-search ul{position:absolute;z-index:1000;left:0;right:0;top:100%;margin:2px 0 0;padding:4px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:9px;box-shadow:0 6px 18px rgba(0,0,0,.18);max-height:280px;overflow:auto}
+.pm-search li{padding:7px 9px;border-radius:6px;cursor:pointer;font-size:14px}
+.pm-search li small{color:var(--muted);margin-left:6px}
+.pm-search li:hover,.pm-search li.on{background:var(--prop-t)}
+.pm-btn{font:inherit;font-size:13.5px;padding:8px 11px;border-radius:9px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.pm-btn.on{background:var(--prop-c);color:#fff;border-color:var(--prop-c)}
+.pm-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:760px){.pm-grid{grid-template-columns:minmax(0,1fr)}}
+.pm-info{margin-top:12px;min-width:0}
+.pm-info .pcard{background:var(--bg)}
+@media print{body *{visibility:hidden}.learn,.learn *{visibility:visible}.learn{position:absolute;left:0;top:0;width:100%}.tabs,.pm-bar,.learn>h2,.learn>p,.pm-info .plan{display:none!important}}
+.tm-pop{font-size:13.5px;line-height:1.45;min-width:200px}
+.tm-pop b.t{font-size:15px}
+.tm-pop button{margin-top:6px;font:inherit;font-size:13px;padding:5px 9px;border-radius:7px;border:1px solid #0f7b83;background:#0f7b83;color:#fff;cursor:pointer}
 .mapnote{font-size:12.5px;color:var(--muted);margin:6px 0 0}
 .offices{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
 .ocard{border:1px solid var(--line);border-top:5px solid var(--c);border-radius:12px;padding:12px;background:var(--bg);text-align:center}
@@ -310,14 +331,34 @@ table.cmp td.hi{color:var(--prop-c);font-weight:800}
     <h2>Learn more</h2>
     <p class="note">Pictures and tools to help you understand your taxes. Tap a tab.</p>
     <div class="tabs" role="tablist" id="tabs">
-      <button class="tab" role="tab" data-tab="t-bill" data-topic="bill" aria-selected="true"><svg class="ico"><use href="#i-bill"/></svg>How your bill is figured</button>
+      <button class="tab" role="tab" data-tab="t-map" data-topic="prop" aria-selected="true"><svg class="ico"><use href="#i-pin"/></svg>Property map</button>
+      <button class="tab" role="tab" data-tab="t-bill" data-topic="bill" aria-selected="false"><svg class="ico"><use href="#i-bill"/></svg>How your bill is figured</button>
       <button class="tab" role="tab" data-tab="t-where" data-topic="value" aria-selected="false"><svg class="ico"><use href="#i-pin"/></svg>Who to call &amp; where to go</button>
       <button class="tab" role="tab" data-tab="t-dict" data-topic="exempt" aria-selected="false"><svg class="ico"><use href="#i-book"/></svg>Dictionary</button>
       <button class="tab" role="tab" data-tab="t-econ" data-topic="reval" aria-selected="false"><svg class="ico"><use href="#i-chart"/></svg>U.S. economy</button>
       <button class="tab" role="tab" data-tab="t-about" data-topic="prop" aria-selected="false"><svg class="ico"><use href="#i-info"/></svg>About this project</button>
     </div>
 
-    <div class="tabpane" id="t-bill" role="tabpanel">
+    <div class="tabpane" id="t-map" role="tabpanel">
+      <p><b>Search an address or parcel ID</b>, <b>tap a colored area</b> to see the typical tax in that ZIP code, or <b>zoom in and tap a house</b> for its estimate.</p>
+      <div class="pm-bar">
+        <div class="pm-search"><input id="pmQ" type="search" autocomplete="off" placeholder="Search: 2413 Nashville Ave or parcel ID" aria-label="Search a property"><ul id="pmSug" hidden></ul></div>
+        <button type="button" class="pm-btn" id="pmLayer" title="Switch between street map and aerial photo">Aerial view</button>
+        <button type="button" class="pm-btn" id="pmLocate" title="Center the map on where you are (stays on your device)">Locate me</button>
+        <button type="button" class="pm-btn" id="pmMeasure" title="Tap points on the map to measure distance and area">Measure</button>
+        <button type="button" class="pm-btn" id="pmShare" title="Copy a link to the selected property">Copy link</button>
+        <button type="button" class="pm-btn" id="pmPrint" title="Print the map and the selected property">Print</button>
+      </div>
+      <div class="legend" id="taxLegend"></div>
+      <div class="pm-grid">
+        <div class="map tall" id="taxMap" role="img" aria-label="Property map with typical property tax by ZIP code"></div>
+        <div class="pm-info" id="pmInfo"><p class="note">Pick a property to see its details here: values, exemptions, estimated tax, neighborhood comparison and what you could do.</p><p class="note">For zoning, lot lines and historic districts, use the City's <a href="https://property.nola.gov" target="_blank" rel="noopener">Property Viewer</a>.</p></div>
+      </div>
+      <p class="mapnote" id="pmMeasureOut" hidden></p>
+      <p class="mapnote">There are no tax brackets in Orleans: every home pays the same rate, about 132 mills ($132 per $1,000 of taxable value). <a class="cite" href="#src-S2">S2</a> Bills differ by area because home values differ and because homestead takes $7,500 off the taxed value of homes owners live in. Colors show the median estimated 2026 tax for homes in each ZIP (from the 2026 roll, values as of Jan 1, 2023). <a class="cite" href="#src-S21">S21</a> Map © OpenStreetMap contributors.</p>
+    </div>
+
+    <div class="tabpane" id="t-bill" role="tabpanel" hidden>
       <p>Here is how a <b>$300,000 home</b> on the East Bank, where the owner lives, becomes a tax bill (2026 rates). <a class="cite" href="#src-S20">S20</a></p>
       <div class="flow">
         <div class="step" data-topic="value"><svg class="ico"><use href="#i-house"/></svg><div class="k">1. Market value</div><div class="v">$300,000</div><div class="how">What the Assessor thinks it would sell for</div></div>
@@ -570,6 +611,100 @@ function compareTable(list){
     return `<tr><td>${k}</td>${vals.map(v=>`<td class="${flag&&v===lo?"hi":""}">${esc(fmt(v))}</td>`).join("")}</tr>`;}).join("");
   return `<div class="cmpwrap"><h4>Side-by-side comparison (${m.length} properties)</h4><table class="cmp"><thead>${head}</thead><tbody>${body}</tbody></table><p class="cmpnote">From the 2026 tax roll; taxes are estimates at 2026 rates (lowest highlighted). A different tax doesn't mean a value is right or wrong. Scroll sideways on a phone.</p></div>`;
 }
+// ---------- Clickable tax map ----------
+const TAXBANDS=[[0,1500,"#e3f5ec"],[1500,2500,"#a8e0c4"],[2500,3500,"#5fc196"],[3500,5000,"#22966a"],[5000,1e9,"#0b5f43"]];
+const bandColor=v=>(TAXBANDS.find(b=>v>=b[0]&&v<b[1])||TAXBANDS[0])[2];
+let taxMapDone=false, PM=null, pmMark=null, pmSel=null;
+async function drawTaxMap(){
+  if(taxMapDone) return; taxMapDone=true;
+  const el=$("#taxMap");
+  $("#taxLegend").innerHTML="<b>Typical yearly tax:</b> "+TAXBANDS.map(([a,b,c])=>`<span><i style="background:${c}"></i>${b>1e8?money(a)+"+":(a?money(a)+"–":"under ")+money(b)}</span>`).join("");
+  try{
+    const L=await ensureLeaflet();
+    const m=L.map(el,{scrollWheelZoom:false}).setView([29.97,-90.05],11); PM=m;
+    const street=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(m);
+    const aerial=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Imagery &copy; Esri, Maxar, Earthstar Geographics"});
+    $("#pmLayer").onclick=()=>{const on=m.hasLayer(aerial); if(on){m.removeLayer(aerial);street.addTo(m);} else {m.removeLayer(street);aerial.addTo(m);aerial.bringToBack();} $("#pmLayer").textContent=on?"Aerial view":"Street map"; $("#pmLayer").classList.toggle("on",!on);};
+    $("#pmLocate").onclick=()=>{ if(!navigator.geolocation) return; navigator.geolocation.getCurrentPosition(p=>{m.setView([p.coords.latitude,p.coords.longitude],17);},()=>alertNote("Couldn't get your location."),{timeout:8000}); };
+    setupMeasure(L,m);
+    const gj=await fetch("/data/zip_tax.json").then(r=>r.json());
+    const pct=n=>n==null?"–":(n>0?"+":"")+n+"%";
+    const layer=L.geoJSON(gj,{style:f=>({color:"#ffffff",weight:1.5,fillColor:bandColor(f.properties.median_tax),fillOpacity:.62}),
+      onEachFeature:(f,ly)=>{const p=f.properties;
+        ly.on("click",e=>{
+          if(measuring) return addMeasurePoint(e.latlng);
+          if(m.getZoom()>=15) return houseClick(m,e.latlng);
+          L.popup().setLatLng(e.latlng).setContent(`<div class="tm-pop"><b class="t">ZIP ${p.zip}</b><br>Homes on the roll: ${p.homes.toLocaleString("en-US")}<br>Typical home value: <b>${money(p.median_value)}</b><br>Typical yearly tax: <b>${money(p.median_tax)}</b><br>&nbsp;· if the owner lives there (homestead): ${money(p.median_tax_homestead)}<br>&nbsp;· rentals and others: ${money(p.median_tax_no_homestead)}<br>Homes with homestead: ${p.homestead_share}%<br>Zillow typical value since Jan 2023: ${pct(p.zillow_change_since_2023)}<br><i>Zoom in and tap a house for its estimate.</i></div>`).openOn(m);});
+        ly.on("mouseover",()=>ly.setStyle({weight:3,color:"#333"})); ly.on("mouseout",()=>layer.resetStyle(ly));}}).addTo(m);
+    m.fitBounds(layer.getBounds(),{padding:[10,10]});
+    m.on("click",e=>{ if(measuring) return; if(m.getZoom()>=15) houseClick(m,e.latlng); });
+    setTimeout(()=>m.invalidateSize(),80);
+  }catch(e){ el.innerHTML='<p class="note" style="padding:12px">The map could not load right now.</p>'; }
+}
+function alertNote(t){const o=$("#pmMeasureOut"); o.textContent=t; o.hidden=false;}
+function showInfo(d){
+  pmSel=d; d._n=null;
+  $("#pmInfo").innerHTML=card(d);
+  const pb=$("#pmInfo [data-plan]"); if(pb) pb.onclick=()=>{ask(`This is my property: ${d.roll_address}. Give me the details, my tax evaluation, and what I could do, with steps.`,"prop");$("#log").scrollIntoView({behavior:"smooth",block:"start"});};
+  try{history.replaceState(null,"","#p="+encodeURIComponent(d.parcel_id));}catch(e){}
+  const loc=d.market&&d.market.location;
+  if(PM&&loc&&window.L){ if(pmMark) PM.removeLayer(pmMark); pmMark=L.marker([loc.lat,loc.lon],{icon:pinIcon(L,"★","#0f7b83"),title:d.roll_address}).addTo(PM); }
+}
+async function selectProperty(q){
+  try{
+    const r=await fetch("/api/lookup",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({addresses:[q],facts:getFacts()})});
+    const d=(await r.json()).results?.[0];
+    if(!d||d.status!=="MATCHED"){$("#pmInfo").innerHTML=d?card(d):'<p class="note">Not found.</p>';return;}
+    showInfo(d);
+    const loc=d.market&&d.market.location;
+    if(PM&&loc) PM.setView([loc.lat,loc.lon],18); else if(!loc) $("#pmInfo").insertAdjacentHTML("beforeend",'<p class="note">This property couldn\'t be placed on the map.</p>');
+  }catch(e){$("#pmInfo").innerHTML='<p class="note">Lookup failed. Try again.</p>';}
+}
+// search box with suggestions
+let sugT=null, sugList=[], sugI=-1;
+function drawSug(){const ul=$("#pmSug"); ul.hidden=!sugList.length; ul.innerHTML=sugList.map((r,i)=>`<li data-i="${i}" class="${i===sugI?"on":""}">${esc(r.addr)}<small>${esc((r.use||"").toLowerCase())} · ${esc(r.pid)}</small></li>`).join("");}
+$("#pmQ").addEventListener("input",e=>{clearTimeout(sugT); const q=e.target.value.trim(); if(q.length<2){sugList=[];drawSug();return;} sugT=setTimeout(async()=>{try{sugList=(await fetch("/api/suggest?q="+encodeURIComponent(q)).then(r=>r.json())).results||[];}catch(_){sugList=[];} sugI=-1; drawSug();},180);});
+$("#pmQ").addEventListener("keydown",e=>{
+  if(e.key==="ArrowDown"){sugI=Math.min(sugI+1,sugList.length-1);drawSug();e.preventDefault();}
+  else if(e.key==="ArrowUp"){sugI=Math.max(sugI-1,0);drawSug();e.preventDefault();}
+  else if(e.key==="Enter"){e.preventDefault(); const r=sugList[sugI>=0?sugI:0]; sugList=[];drawSug(); selectProperty(r?r.pid:e.target.value); if(r) e.target.value=r.addr;}
+  else if(e.key==="Escape"){sugList=[];drawSug();}
+});
+$("#pmSug").addEventListener("mousedown",e=>{const li=e.target.closest("li"); if(!li) return; const r=sugList[+li.dataset.i]; $("#pmQ").value=r.addr; sugList=[];drawSug(); selectProperty(r.pid);});
+$("#pmQ").addEventListener("blur",()=>setTimeout(()=>{sugList=[];drawSug();},150));
+$("#pmShare").onclick=async()=>{ if(!pmSel){alertNote("Pick a property first, then copy its link.");return;} const url=location.origin+location.pathname+"#p="+encodeURIComponent(pmSel.parcel_id); try{await navigator.clipboard.writeText(url); alertNote("Link copied: "+url);}catch(e){alertNote("Copy this link: "+url);} };
+$("#pmPrint").onclick=()=>window.print();
+// measure tool
+let measuring=false, mPts=[], mLine=null, mPoly=null;
+function setupMeasure(L,m){
+  $("#pmMeasure").onclick=()=>{measuring=!measuring; $("#pmMeasure").classList.toggle("on",measuring); $("#pmMeasure").textContent=measuring?"Stop measuring":"Measure"; mPts=[]; if(mLine) m.removeLayer(mLine); if(mPoly) m.removeLayer(mPoly); mLine=mPoly=null; alertNote(measuring?"Tap points on the map. Distance shows here; 3 or more points also show the area. Estimates only, not a survey.":""); if(!measuring) $("#pmMeasureOut").hidden=true;};
+  m.on("click",e=>{ if(measuring) addMeasurePoint(e.latlng); });
+}
+function addMeasurePoint(ll){
+  const L=window.L, m=PM; mPts.push(ll);
+  if(mLine) m.removeLayer(mLine); if(mPoly) m.removeLayer(mPoly);
+  mLine=L.polyline(mPts,{color:"#c26a0a",weight:3,dashArray:"6 4"}).addTo(m);
+  let d=0; for(let i=1;i<mPts.length;i++) d+=m.distance(mPts[i-1],mPts[i]);
+  const ft=d*3.28084; let txt=`Distance: ${ft<5280?Math.round(ft).toLocaleString("en-US")+" ft":(ft/5280).toFixed(2)+" miles"}`;
+  if(mPts.length>=3){
+    mPoly=L.polygon(mPts,{color:"#c26a0a",weight:1,fillOpacity:.15}).addTo(m);
+    const lat0=mPts[0].lat*Math.PI/180, R=6378137; const xy=mPts.map(p=>[R*p.lng*Math.PI/180*Math.cos(lat0),R*p.lat*Math.PI/180]);
+    let a=0; for(let i=0;i<xy.length;i++){const [x1,y1]=xy[i],[x2,y2]=xy[(i+1)%xy.length]; a+=x1*y2-x2*y1;} const sqft=Math.abs(a/2)*10.7639;
+    const per=(d+m.distance(mPts[mPts.length-1],mPts[0]))*3.28084;
+    txt+=` · Area: ${sqft<43560?Math.round(sqft).toLocaleString("en-US")+" sq ft":(sqft/43560).toFixed(2)+" acres"} · Perimeter: ${Math.round(per).toLocaleString("en-US")} ft`;
+  }
+  alertNote(txt+" (estimate, not survey grade)");
+}
+async function houseClick(m,ll){
+  const L=window.L; const pop=L.popup().setLatLng(ll).setContent('<div class="tm-pop">Looking up the nearest property…</div>').openOn(m);
+  try{
+    const r=await fetch(`/api/nearby?lat=${ll.lat.toFixed(6)}&lon=${ll.lng.toFixed(6)}`); const d=await r.json();
+    if(!r.ok){pop.setContent(`<div class="tm-pop">${esc(d.error||"Nothing found here.")}</div>`);return;}
+    pop.setContent(`<div class="tm-pop"><b class="t">${esc(d.roll_address)}</b><br>Market value: <b>${money(d.market_value)}</b><br>Taxable value: ${money(d.taxable_value)}<br>Est. 2026 tax: <b>${money2(d.est_2026_tax)}</b> (about ${money(d.tax_eval?.monthly_equivalent)}/month)<br>Homestead on file: ${d.homestead_exemption>0?"Yes":"No"}<br><i>Estimate from the 2026 roll; not a bill.</i><br><button type="button" data-open="${esc(d.parcel_id)}">See full details</button></div>`);
+    showInfo(d);
+    setTimeout(()=>{const b=document.querySelector(`.tm-pop [data-open="${d.parcel_id}"]`); if(b) b.onclick=()=>{$("#pmInfo").scrollIntoView({behavior:"smooth",block:"nearest"});};},50);
+  }catch(e){pop.setContent('<div class="tm-pop">Lookup failed. Try again.</div>');}
+}
 let lastLookup=[];
 function getFacts(){return {lives_here:$("#f_lives").checked, age65:$("#f_65").checked, disabled:$("#f_dis").checked, veteran_rating:$("#f_vet").value, value_concern:$("#f_val").checked};}
 async function runLookup(list){
@@ -622,7 +757,9 @@ document.querySelectorAll("#tabs .tab").forEach(b=>b.addEventListener("click",()
   document.querySelectorAll("#tabs .tab").forEach(x=>x.setAttribute("aria-selected",x===b?"true":"false"));
   document.querySelectorAll(".learn .tabpane").forEach(p=>p.hidden=p.id!==b.dataset.tab);
   if(b.dataset.tab==="t-where") drawMap($("#officeMap"),OFFICES);
+  if(b.dataset.tab==="t-map") drawTaxMap();
 }));
+drawTaxMap().then(()=>{const h=location.hash.match(/^#p=([^&]+)/); if(h) selectProperty(decodeURIComponent(h[1]));});
 // U.S. economy panel
 $("#econAsof").textContent=ECON_ASOF;
 $("#econ").innerHTML=ECON.map(e=>`<div class="stat"><div class="top"><span class="k">${esc(e.key)}</span><span class="v">${esc(e.value)}</span></div><div class="d">${esc(e.detail.replace(/\s*\[S\d+\]/g,""))}</div><div class="src"><a href="${e.url}" target="_blank" rel="noopener">${esc(e.org)}</a> · ${esc(e.asof)}</div></div>`).join("");
