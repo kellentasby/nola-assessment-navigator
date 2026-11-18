@@ -171,6 +171,7 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
 .pcard{border:1px solid var(--line);border-left:5px solid var(--prop-c);border-radius:10px;padding:12px 14px;background:var(--bg);min-width:0;font-size:14px}
 .pcard.miss{border-left-color:var(--appeal-c)}
 .pcard h4{margin:0;font-size:16px}
+.pin-n{display:inline-block;min-width:20px;height:20px;border-radius:50%;background:var(--prop-c);color:#fff;font:700 12px/20px var(--mono,monospace);text-align:center;margin-right:4px}
 .pcard .sub{color:var(--muted);font-size:12.5px;margin-bottom:8px}
 .pcard dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0}
 .pcard dt{color:var(--muted)}
@@ -195,9 +196,56 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
 .pcard .todo li{margin-bottom:2px}
 .pcard .save{color:var(--bill-c);font-weight:700}
 .pcard .plan{margin-top:10px;width:100%}
+.ico{width:22px;height:22px;flex:none;color:var(--c)}
+.topic h3 .ico{width:24px;height:24px}
+.maincol{display:flex;flex-direction:column;gap:18px;min-width:0}
+.learn{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+.learn h2{font-family:var(--display);font-size:22px;margin:0 0 4px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 14px}
+.tab{font:inherit;font-size:14.5px;display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.tab .ico{width:18px;height:18px;color:currentColor}
+.tab[aria-selected="true"]{background:var(--c,var(--prop-c));border-color:var(--c,var(--prop-c));color:#fff}
+.tabpane[hidden]{display:none}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:6px 0 10px}
+@media (max-width:700px){.flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.step{position:relative;border-radius:12px;padding:12px;background:var(--t);border:1px solid var(--line);text-align:center}
+.step .ico{width:34px;height:34px;margin:0 auto 6px;display:block}
+.step .k{font-size:13px;color:var(--muted)}
+.step .v{font-size:20px;font-weight:800;color:var(--c);font-variant-numeric:tabular-nums}
+.step .how{font-size:12.5px;color:var(--muted);margin-top:4px}
+.map{height:300px;border-radius:12px;border:1px solid var(--line);margin-top:12px;overflow:hidden;background:var(--bg)}
+.map.small{height:220px}
+.mapnote{font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.offices{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.ocard{border:1px solid var(--line);border-top:5px solid var(--c);border-radius:12px;padding:12px;background:var(--bg);text-align:center}
+.ocard .pic{width:64px;height:64px;border-radius:50%;background:var(--t);display:flex;align-items:center;justify-content:center;margin:0 auto 8px}
+.ocard .pic .ico{width:36px;height:36px}
+.ocard b{display:block;font-size:15px}
+.ocard .for{font-size:13px;color:var(--muted);display:block;margin:2px 0 6px}
+.ocard .num{font-family:var(--mono);font-size:16px;color:var(--c);font-weight:700}
+.ocard .where{font-size:12.5px;color:var(--muted);margin-top:6px}
+.office{display:flex;gap:10px;align-items:flex-start}
+.office .ico{margin-top:2px}
+.leaflet-container{font:inherit}
+.pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--c);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.pin span{display:block;transform:rotate(45deg);color:#fff;font:700 12px/22px var(--mono,monospace);text-align:center}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" crossorigin="anonymous">
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-house" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></symbol>
+<symbol id="i-bill" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M9 15l2 2 4-4"/></symbol>
+<symbol id="i-gavel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6M11 7l6 6M12.5 5.5l5 5-4 4-5-5z"/><path d="M10.5 10.5L3 18l3 3 7.5-7.5"/><path d="M13 21h8"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l7-5.5 7 5.5"/><path d="M5 10v8h6"/><circle cx="16.5" cy="16.5" r="3.5"/><path d="M19 19l2.5 2.5"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+<symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6a3 3 0 013 3v13a2 2 0 00-2-2H4z"/><path d="M20 4h-6a3 3 0 00-3 3"/><path d="M20 4v14h-7"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+<symbol id="i-percent" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5L5 19"/><circle cx="7" cy="7" r="2.5"/><circle cx="17" cy="17" r="2.5"/></symbol>
+</defs></svg>
 
 <div class="notice"><div class="wrap"><strong>Student project.</strong> Made by Kellen Tasby for a Tulane real estate course. Not run by the Orleans Parish Assessor or the City of New Orleans. This is general information, not legal or tax advice.</div></div>
 
@@ -229,11 +277,14 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
       <label><input type="checkbox" id="f_val"> I think my value is too high</label>
     </fieldset>
     <div class="cards" id="cards"></div>
+    <div class="map" id="lkMap" hidden role="img" aria-label="Map of the properties you looked up"></div>
+    <p class="mapnote" id="lkMapNote" hidden></p>
     <p class="lk-note" id="lkNote" hidden>From the 2026 Orleans tax roll (Louisiana Tax Commission). Values are as of Jan 1, 2023. Taxes are estimates at 2026 rates and leave out neighborhood district fees. Owner names are not shown. Not an official record: confirm with the Assessor, (504) 754-8811.</p>
   </section>
 </div></header>
 
 <main><div class="wrap">
+  <div class="maincol">
   <section class="chat" aria-label="Ask a question">
     <div class="chat-head"><strong>Your questions</strong><button class="ghost" id="reset" type="button">Start over</button></div>
     <div class="log" id="log" aria-live="polite"></div>
@@ -245,19 +296,56 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
     <p class="hint">Please don't type your name, address or other personal details.</p>
   </section>
 
-  <aside>
-    <div class="panel">
-      <h2>Important dates</h2>
-      <ul class="dates">
-        <li><span class="what">Property tax bill due</span><span class="when">January 31 each year <a class="cite" href="#src-S3">S3</a></span><span class="chip soon">Next: Jan 31</span></li>
-        <li><span class="what">2026 appeal window</span><span class="when">Closed Aug 20, 2026 (2027 tax year) <a class="cite" href="#src-S5">S5</a></span><span class="chip closed">Closed</span></li>
-        <li><span class="what">New values and next appeal window</span><span class="when">Expected summer 2027 with the reassessment <a class="cite" href="#src-S7">S7</a></span><span class="chip est">Estimate</span></li>
-        <li><span class="what">Appeal to the La. Tax Commission</span><span class="when">Within 10 business days of a Board of Review decision <a class="cite" href="#src-S1">S1</a></span><span class="chip if">If you appealed</span></li>
-      </ul>
+
+  <section class="learn" aria-label="Learn more">
+    <h2>Learn more</h2>
+    <p class="note">Pictures and tools to help you understand your taxes. Tap a tab.</p>
+    <div class="tabs" role="tablist" id="tabs">
+      <button class="tab" role="tab" data-tab="t-bill" data-topic="bill" aria-selected="true"><svg class="ico"><use href="#i-bill"/></svg>How your bill is figured</button>
+      <button class="tab" role="tab" data-tab="t-where" data-topic="value" aria-selected="false"><svg class="ico"><use href="#i-pin"/></svg>Who to call &amp; where to go</button>
+      <button class="tab" role="tab" data-tab="t-dict" data-topic="exempt" aria-selected="false"><svg class="ico"><use href="#i-book"/></svg>Dictionary</button>
+      <button class="tab" role="tab" data-tab="t-econ" data-topic="reval" aria-selected="false"><svg class="ico"><use href="#i-chart"/></svg>U.S. economy</button>
+      <button class="tab" role="tab" data-tab="t-about" data-topic="prop" aria-selected="false"><svg class="ico"><use href="#i-info"/></svg>About this project</button>
     </div>
 
-    <div class="panel about" data-topic="prop">
-      <h2>About this project's data</h2>
+    <div class="tabpane" id="t-bill" role="tabpanel">
+      <p>Here is how a <b>$300,000 home</b> on the East Bank, where the owner lives, becomes a tax bill (2026 rates). <a class="cite" href="#src-S20">S20</a></p>
+      <div class="flow">
+        <div class="step" data-topic="value"><svg class="ico"><use href="#i-house"/></svg><div class="k">1. Market value</div><div class="v">$300,000</div><div class="how">What the Assessor thinks it would sell for</div></div>
+        <div class="step" data-topic="value"><svg class="ico"><use href="#i-percent"/></svg><div class="k">2. Assessed value</div><div class="v">$30,000</div><div class="how">10% of market value <a class="cite" href="#src-S1">S1</a></div></div>
+        <div class="step" data-topic="exempt"><svg class="ico"><use href="#i-shield"/></svg><div class="k">3. Taxable value</div><div class="v">$22,500</div><div class="how">Minus $7,500 homestead exemption <a class="cite" href="#src-S2">S2</a></div></div>
+        <div class="step" data-topic="bill"><svg class="ico"><use href="#i-bill"/></svg><div class="k">4. Yearly tax</div><div class="v">$3,056</div><div class="how">About 132 mills ($132 per $1,000). Due Jan 31 <a class="cite" href="#src-S3">S3</a></div></div>
+      </div>
+      <p class="note">Police and fire taxes (11.51 mills) are figured before the homestead break, so the math is: $22,500 × 120.48 ÷ 1,000 + $30,000 × 11.51 ÷ 1,000 = $3,056.10. Without homestead (like a rental) it would be about $3,960.</p>
+      <button class="qbtn" type="button" data-about>How do I turn assessed value and millage into my tax bill? Show an example.</button>
+    </div>
+
+    <div class="tabpane" id="t-where" role="tabpanel" hidden>
+      <div class="offices">
+        <div class="ocard" data-topic="value"><div class="pic"><svg class="ico"><use href="#i-search"/></svg></div><b>Orleans Parish Assessor</b><span class="for">Your home's value, homestead, senior freeze</span><span class="num">(504) 754-8811</span><div class="where">City Hall, 1300 Perdido St, 4th floor · <a href="https://www.nolaassessor.com" target="_blank" rel="noopener">nolaassessor.com</a> <a class="cite" href="#src-S5">S5</a></div></div>
+        <div class="ocard" data-topic="appeal"><div class="pic"><svg class="ico"><use href="#i-gavel"/></svg></div><b>Board of Review</b><span class="for">Appeal hearings (City Council)</span><span class="num">(504) 658-1080</span><div class="where">2026 hearings were at Delgado, City Park Campus, 615 City Park Ave <a class="cite" href="#src-S1">S1</a></div></div>
+        <div class="ocard" data-topic="bill"><div class="pic"><svg class="ico"><use href="#i-bill"/></svg></div><b>Bureau of Treasury</b><span class="for">Your tax bill and payments</span><span class="num">(504) 658-1712</span><div class="where">City Hall, Room 1W40 · <a href="https://nola.gov/next/treasury/topics/faq/" target="_blank" rel="noopener">pay online</a> <a class="cite" href="#src-S3">S3</a></div></div>
+      </div>
+      <div class="map" id="officeMap" role="img" aria-label="Map of the offices"></div>
+      <p class="mapnote">Pins: 1 City Hall (Assessor and Treasury), 2 Algiers Courthouse, 225 Morgan St (Assessor review site during the 2026 open roll), 3 Delgado City Park Campus (2026 Board of Review hearings). Call before you go; places and hours can change. Map © OpenStreetMap contributors.</p>
+    </div>
+
+    <div class="tabpane" id="t-dict" role="tabpanel" hidden>
+      <p class="note">Don't know a word? Type it here, tap a letter, or ask the chatbot "What does ___ mean?" Every word is explained in simple language.</p>
+      <input id="dictQ" class="dictq" type="search" placeholder="Search words, e.g. millage" aria-label="Search the dictionary">
+      <div class="azrow" id="dictAZ" aria-label="Jump to a letter"></div>
+      <p class="note" id="dictCount"></p>
+      <dl class="words" id="dict"></dl>
+      <p class="note" id="dictNone" hidden>Not in the dictionary yet. Try asking the chatbot.</p>
+    </div>
+
+    <div class="tabpane econ" id="t-econ" role="tabpanel" hidden>
+      <p class="note">National numbers for context, as of <span id="econAsof"></span>. They don't change this year's assessed value; they matter for the next reappraisal. <a class="cite" href="#src-S26">S26</a></p>
+      <div id="econ" class="offices"></div>
+      <button class="qbtn" type="button" data-about>How does the economy affect my property taxes?</button>
+    </div>
+
+    <div class="tabpane about" id="t-about" role="tabpanel" hidden>
       <p class="note">Ask the chatbot how it was built and tested:</p>
       <button class="qbtn" type="button" data-about>What did the exploratory data analysis of the tax roll find?</button>
       <button class="qbtn" type="button" data-about>What's in the data dictionary, and what couldn't you figure out?</button>
@@ -278,29 +366,25 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
         <li><button class="qbtn" type="button" data-about>What is the property tax rate in Jefferson Parish?</button></li>
       </ol></details>
     </div>
+  </section>
+  </div>
 
-    <div class="panel econ">
-      <h2>U.S. economy at a glance</h2>
-      <p class="note">National numbers for context, as of <span id="econAsof"></span>. They don't change this year's assessed value; they matter for the next reappraisal. <a class="cite" href="#src-S26">S26</a></p>
-      <div id="econ"></div>
-      <button class="qbtn" type="button" data-about>How does the economy affect my property taxes?</button>
+  <aside>
+    <div class="panel">
+      <h2>Important dates</h2>
+      <ul class="dates">
+        <li><span class="what">Property tax bill due</span><span class="when">January 31 each year <a class="cite" href="#src-S3">S3</a></span><span class="chip soon">Next: Jan 31</span></li>
+        <li><span class="what">2026 appeal window</span><span class="when">Closed Aug 20, 2026 (2027 tax year) <a class="cite" href="#src-S5">S5</a></span><span class="chip closed">Closed</span></li>
+        <li><span class="what">New values and next appeal window</span><span class="when">Expected summer 2027 with the reassessment <a class="cite" href="#src-S7">S7</a></span><span class="chip est">Estimate</span></li>
+        <li><span class="what">Appeal to the La. Tax Commission</span><span class="when">Within 10 business days of a Board of Review decision <a class="cite" href="#src-S1">S1</a></span><span class="chip if">If you appealed</span></li>
+      </ul>
     </div>
 
     <div class="panel">
       <h2>Who to call</h2>
-      <div class="office" data-topic="value"><b>Orleans Parish Assessor</b><span class="for">Your value, homestead, senior freeze</span><br><span class="num">(504) 754-8811</span> · <a href="https://www.nolaassessor.com" target="_blank" rel="noopener">nolaassessor.com</a></div>
-      <div class="office" data-topic="appeal"><b>City Council / Board of Review</b><span class="for">Appeal hearings and decisions</span><br><span class="num">(504) 658-1080</span></div>
-      <div class="office" data-topic="bill"><b>Bureau of Treasury</b><span class="for">Your tax bill and payments</span><br><span class="num">(504) 658-1712</span></div>
-    </div>
-
-    <div class="panel">
-      <h2>Dictionary</h2>
-      <p class="note">Don't know a word? Type it here, tap a letter, or ask the chatbot "What does ___ mean?" Every word is explained in simple language.</p>
-      <input id="dictQ" class="dictq" type="search" placeholder="Search words, e.g. millage" aria-label="Search the dictionary">
-      <div class="azrow" id="dictAZ" aria-label="Jump to a letter"></div>
-      <p class="note" id="dictCount"></p>
-      <dl class="words" id="dict"></dl>
-      <p class="note" id="dictNone" hidden>Not in the dictionary yet. Try asking the chatbot.</p>
+      <div class="office" data-topic="value"><svg class="ico"><use href="#i-search"/></svg><div><b>Orleans Parish Assessor</b><span class="for">Your value, homestead, senior freeze</span><br><span class="num">(504) 754-8811</span> · <a href="https://www.nolaassessor.com" target="_blank" rel="noopener">nolaassessor.com</a></div></div>
+      <div class="office" data-topic="appeal"><svg class="ico"><use href="#i-gavel"/></svg><div><b>City Council / Board of Review</b><span class="for">Appeal hearings and decisions</span><br><span class="num">(504) 658-1080</span></div></div>
+      <div class="office" data-topic="bill"><svg class="ico"><use href="#i-bill"/></svg><div><b>Bureau of Treasury</b><span class="for">Your tax bill and payments</span><br><span class="num">(504) 658-1712</span></div></div>
     </div>
 
     <div class="panel">
@@ -392,7 +476,7 @@ function card(r){
   if(r.status==="MATCHED"){
     const ex=[["Homestead",r.homestead_exemption],["Veteran",r.veteran_exemption],["First responder",r.first_responder_exemption],["Other",r.other_exemption]].filter(x=>x[1]>0);
     const w=r.ward_comparison;
-    return `<article class="pcard"><h4>${esc(r.roll_address)}</h4><div class="sub">Parcel ${esc(r.parcel_id)} · ${esc(r.bank)} · ward code ${esc(r.ward_code)} · ${esc((r.use||"").toLowerCase())}</div>
+    return `<article class="pcard"><h4>${r._n?`<span class="pin-n">${r._n}</span> `:""}${esc(r.roll_address)}</h4><div class="sub">Parcel ${esc(r.parcel_id)} · ${esc(r.bank)} · ward code ${esc(r.ward_code)} · ${esc((r.use||"").toLowerCase())}</div>
     <dl><dt>Market value</dt><dd>${money(r.market_value)}</dd><dt>Land / building</dt><dd>${money(r.land_value)} / ${money(r.building_value)}</dd>
     <dt>Assessed value</dt><dd>${money(r.assessed_value)}${r.assessed_pct_of_market!=null?` (${r.assessed_pct_of_market}%)`:""}</dd>
     ${ex.map(x=>`<dt>${x[0]} exemption</dt><dd>−${money(x[1])}</dd>`).join("")}
@@ -418,6 +502,44 @@ function mkt(r){
   if(m.note) h+=`<br>${esc(m.note)}`;
   return h+`</div>`;
 }
+// ---------- Maps (Leaflet + OpenStreetMap, loaded only when needed) ----------
+let leafletP=null;
+function ensureLeaflet(){
+  if(window.L) return Promise.resolve(window.L);
+  if(!leafletP) leafletP=new Promise((res,rej)=>{const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";sc.crossOrigin="anonymous";sc.onload=()=>res(window.L);sc.onerror=rej;document.head.appendChild(sc);});
+  return leafletP;
+}
+const PINCOLOR=["#0f7b83","#c26a0a","#6b4fbb","#17855a","#c0392b","#2563c9"];
+function pinIcon(L,n,color){return L.divIcon({className:"",html:`<div class="pin" style="--c:${color}"><span>${n}</span></div>`,iconSize:[26,26],iconAnchor:[13,26],popupAnchor:[0,-24]});}
+const maps=new WeakMap();
+async function drawMap(el, points){
+  if(!el) return;
+  if(!points.length){el.hidden=true;return;}
+  el.hidden=false;
+  try{
+    const L=await ensureLeaflet();
+    let m=maps.get(el);
+    if(!m){m=L.map(el,{scrollWheelZoom:false});L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(m);m._pins=L.layerGroup().addTo(m);maps.set(el,m);}
+    m._pins.clearLayers();
+    const ll=[];
+    points.forEach((p,i)=>{L.marker([p.lat,p.lon],{icon:pinIcon(L,p.n||i+1,p.color||PINCOLOR[i%PINCOLOR.length]),title:p.label}).bindPopup(`<b>${esc(p.label)}</b>${p.sub?`<br>${esc(p.sub)}`:""}`).addTo(m._pins);ll.push([p.lat,p.lon]);});
+    if(ll.length===1) m.setView(ll[0],16); else m.fitBounds(ll,{padding:[30,30],maxZoom:16});
+    setTimeout(()=>m.invalidateSize(),60);
+  }catch(e){el.innerHTML='<p class="note" style="padding:12px">The map could not load right now.</p>';}
+}
+function propPoints(list){
+  return list.filter(r=>r.status==="MATCHED"&&r.market&&r.market.location).map((r,i)=>({lat:r.market.location.lat,lon:r.market.location.lon,n:i+1,label:r.roll_address,sub:`Market value ${money(r.market_value)} · est. 2026 tax ${money2(r.est_2026_tax)}`}));
+}
+function mapNote(list){
+  const matched=list.filter(r=>r.status==="MATCHED"); const placed=matched.filter(r=>r.market&&r.market.location).length;
+  if(!matched.length) return "";
+  return `Pins show where the roll address is (Census Geocoder point; may be off by a few houses). ${placed<matched.length?`${matched.length-placed} propert${matched.length-placed>1?"ies":"y"} couldn't be placed on the map. `:""}Map © OpenStreetMap contributors.`;
+}
+const OFFICES=[
+  {lat:29.95244,lon:-90.07657,n:1,color:"#2563c9",label:"City Hall, 1300 Perdido St",sub:"Assessor (4th floor) and Bureau of Treasury (Room 1W40)"},
+  {lat:29.95367,lon:-90.05437,n:2,color:"#c26a0a",label:"Algiers Courthouse, 225 Morgan St",sub:"Assessor review site during the 2026 open roll"},
+  {lat:29.9839,lon:-90.1049,n:3,color:"#c0392b",label:"Delgado Community College, City Park Campus",sub:"615 City Park Ave · 2026 Board of Review hearings"},
+];
 let lastLookup=[];
 function getFacts(){return {lives_here:$("#f_lives").checked, age65:$("#f_65").checked, disabled:$("#f_dis").checked, veteran_rating:$("#f_vet").value, value_concern:$("#f_val").checked};}
 async function runLookup(list){
@@ -425,7 +547,7 @@ async function runLookup(list){
   try{
     const r=await fetch("/api/lookup",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({addresses:list,facts:getFacts()})});
     const d=await r.json(); if(!r.ok) throw new Error(d.error||"Lookup failed");
-    lastLookup=d.results; $("#cards").innerHTML=d.results.map(card).join("");
+    lastLookup=d.results; let k=0; d.results.forEach(r=>{if(r.status==="MATCHED"&&r.market&&r.market.location) r._n=++k;}); $("#cards").innerHTML=d.results.map(card).join(""); drawMap($("#lkMap"),propPoints(d.results)); const nt=mapNote(d.results); $("#lkMapNote").textContent=nt; $("#lkMapNote").hidden=!nt;
     $("#lkNote").hidden=false; $("#lkExplain").hidden=!d.results.some(x=>x.status==="MATCHED");
   }catch(e){ $("#cards").innerHTML=`<p class="note">The lookup didn't work just now. Try again, or call the Assessor at (504) 754-8811.</p>`; }
   finally{btn.disabled=false}
@@ -445,7 +567,9 @@ async function ask(text, topicHint){
     const data=await r.json().catch(()=>({}));
     if(!r.ok){ console.warn("AI answer failed", r.status, data); bot.dataset.diag=JSON.stringify({status:r.status,type:data.type,hint:data.hint}); throw Object.assign(new Error(data.error||"Request failed"),{status:r.status}); }
     const props=(data.properties||[]).filter(p=>p.status==="MATCHED");
-    body.innerHTML=(props.length?`<div class="cards">${props.map(card).join("")}</div>`:"")+render(data.text)+srcList(usedIds(data.text))+(data.truncated?`<p class="note">This answer was cut short. Try asking a narrower question.</p>`:"");
+    let kk=0; props.forEach(r=>{if(r.market&&r.market.location) r._n=++kk;});
+    body.innerHTML=(props.length?`<div class="cards">${props.map(card).join("")}</div>${kk?`<div class="map small" role="img" aria-label="Map of these properties"></div>`:""}`:"")+render(data.text)+srcList(usedIds(data.text))+(data.truncated?`<p class="note">This answer was cut short. Try asking a narrower question.</p>`:"");
+    if(kk) drawMap(body.querySelector(".map"),propPoints(props));
     turns.push({role:"assistant",content:data.text});
   }catch(e){
     turns.pop();
@@ -460,8 +584,15 @@ function greet(){
 }
 
 // Build the page
-$("#topics").innerHTML=TOPICS.map(t=>`<div class="topic" data-topic="${t.id}"><h3><span class="dot"></span>${esc(t.name)}</h3><p>${esc(t.blurb)}</p>${t.qs.map(x=>`<button class="qbtn" type="button" data-t="${t.id}">${esc(x)}</button>`).join("")}</div>`).join("");
+const TICON={value:"i-house",bill:"i-bill",exempt:"i-shield",reval:"i-calendar",appeal:"i-gavel"};
+$("#topics").innerHTML=TOPICS.map(t=>`<div class="topic" data-topic="${t.id}"><h3><svg class="ico"><use href="#${TICON[t.id]}"/></svg>${esc(t.name)}</h3><p>${esc(t.blurb)}</p>${t.qs.map(x=>`<button class="qbtn" type="button" data-t="${t.id}">${esc(x)}</button>`).join("")}</div>`).join("");
 $("#topics").addEventListener("click",e=>{const b=e.target.closest(".qbtn");if(b){ask(b.textContent,b.dataset.t);$("#log").scrollIntoView({behavior:"smooth",block:"start"})}});
+// Learn-more tabs
+document.querySelectorAll("#tabs .tab").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#tabs .tab").forEach(x=>x.setAttribute("aria-selected",x===b?"true":"false"));
+  document.querySelectorAll(".learn .tabpane").forEach(p=>p.hidden=p.id!==b.dataset.tab);
+  if(b.dataset.tab==="t-where") drawMap($("#officeMap"),OFFICES);
+}));
 // U.S. economy panel
 $("#econAsof").textContent=ECON_ASOF;
 $("#econ").innerHTML=ECON.map(e=>`<div class="stat"><div class="top"><span class="k">${esc(e.key)}</span><span class="v">${esc(e.value)}</span></div><div class="d">${esc(e.detail.replace(/\s*\[S\d+\]/g,""))}</div><div class="src"><a href="${e.url}" target="_blank" rel="noopener">${esc(e.org)}</a> · ${esc(e.asof)}</div></div>`).join("");
