@@ -171,6 +171,14 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
 .pcard{border:1px solid var(--line);border-left:5px solid var(--prop-c);border-radius:10px;padding:12px 14px;background:var(--bg);min-width:0;font-size:14px}
 .pcard.miss{border-left-color:var(--appeal-c)}
 .pcard h4{margin:0;font-size:16px}
+.cmpwrap{margin-top:14px;overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.cmpwrap h4{margin:10px 12px 4px;font-size:16px;color:var(--prop-c)}
+table.cmp{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+table.cmp th,table.cmp td{padding:7px 10px;border-top:1px solid var(--line);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+table.cmp th:first-child,table.cmp td:first-child{text-align:left;color:var(--muted);font-weight:600;position:sticky;left:0;background:var(--bg)}
+table.cmp thead th{color:var(--ink);font-weight:700;border-top:0}
+table.cmp td.hi{color:var(--prop-c);font-weight:800}
+.cmpnote{font-size:12.5px;color:var(--muted);margin:6px 12px 10px}
 .pin-n{display:inline-block;min-width:20px;height:20px;border-radius:50%;background:var(--prop-c);color:#fff;font:700 12px/20px var(--mono,monospace);text-align:center;margin-right:4px}
 .pcard .sub{color:var(--muted);font-size:12.5px;margin-bottom:8px}
 .pcard dl{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;margin:0}
@@ -262,11 +270,11 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
   <div class="topics" id="topics"></div>
   <section class="lookup" aria-label="Look up properties">
     <h3><span class="dot"></span>Look up my property</h3>
-    <p>Type one or more New Orleans addresses (one per line, up to 10) or a parcel ID. You'll see the 2026 roll's values, exemptions, an estimated 2026 tax, a neighborhood comparison, and what you could do next. Tick the boxes below to tailor the steps.</p>
+    <p>Type one or more New Orleans addresses (one per line, up to 10) or a parcel ID. <b>To compare properties, type 2 or more addresses</b> and a side-by-side table appears. You'll see the 2026 roll's values, exemptions, an estimated 2026 tax, a neighborhood comparison, and what you could do next. Tick the boxes below to tailor the steps.</p>
     <div class="lk-row">
       <label for="addrs" hidden>Addresses</label>
       <textarea id="addrs" placeholder="2413 Nashville Ave&#10;4713 Prytania St&#10;619 Saint Roch Ave"></textarea>
-      <div class="lk-btns"><button class="btn-prop" id="lkBtn" type="button">Look up</button><button class="btn-ghost" id="lkExplain" type="button" hidden>Explain these in the chat</button></div>
+      <div class="lk-btns"><button class="btn-prop" id="lkBtn" type="button">Look up</button><button class="btn-ghost" id="lkSample" type="button">Try a comparison</button><button class="btn-ghost" id="lkExplain" type="button" hidden>Explain these in the chat</button></div>
     </div>
     <fieldset class="facts" id="facts">
       <legend>About you (optional, not saved)</legend>
@@ -276,6 +284,7 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
       <label>Disabled veteran: <select id="f_vet"><option value="">No</option><option value="50">50-69% rating</option><option value="70">70-99% rating</option><option value="100">100% / unemployable</option></select></label>
       <label><input type="checkbox" id="f_val"> I think my value is too high</label>
     </fieldset>
+    <div id="compare" hidden></div>
     <div class="cards" id="cards"></div>
     <div class="map" id="lkMap" hidden role="img" aria-label="Map of the properties you looked up"></div>
     <p class="mapnote" id="lkMapNote" hidden></p>
@@ -540,6 +549,27 @@ const OFFICES=[
   {lat:29.95367,lon:-90.05437,n:2,color:"#c26a0a",label:"Algiers Courthouse, 225 Morgan St",sub:"Assessor review site during the 2026 open roll"},
   {lat:29.9839,lon:-90.1049,n:3,color:"#c0392b",label:"Delgado Community College, City Park Campus",sub:"615 City Park Ave · 2026 Board of Review hearings"},
 ];
+function compareTable(list){
+  const m=list.filter(r=>r.status==="MATCHED");
+  if(m.length<2) return "";
+  const pct=n=>n==null?"–":(n>0?"+":"")+n+"%";
+  const rows=[
+    ["Market value",r=>r.market_value,money],
+    ["Assessed value",r=>r.assessed_value,money],
+    ["Exemptions",r=>r.homestead_exemption+r.veteran_exemption+r.other_exemption+r.first_responder_exemption,v=>v?"−"+money(v):"none"],
+    ["Taxable value",r=>r.taxable_value,money],
+    ["Est. 2026 tax",r=>r.est_2026_tax,money2,"low"],
+    ["Per month",r=>r.tax_eval?.monthly_equivalent,money],
+    ["Tax as % of value",r=>r.tax_eval?.effective_rate_pct_of_market,v=>v==null?"–":v+"%"],
+    ["Homestead on file",r=>r.homestead_exemption>0?"Yes":"No",v=>v],
+    ["Value rank in its ward",r=>r.ward_comparison?.value_band_in_ward,v=>v?v+" band":"–"],
+    ["ZIP change since 2023",r=>r.market?.zillow?.change_since_jan_2023_pct,pct],
+  ];
+  const head=`<tr><th></th>${m.map((r,i)=>`<th>${r._n?`<span class="pin-n">${r._n}</span>`:""}${esc(r.roll_address)}</th>`).join("")}</tr>`;
+  const body=rows.map(([k,f,fmt,flag])=>{const vals=m.map(f);const lo=flag==="low"?Math.min(...vals.filter(v=>typeof v==="number")):null;
+    return `<tr><td>${k}</td>${vals.map(v=>`<td class="${flag&&v===lo?"hi":""}">${esc(fmt(v))}</td>`).join("")}</tr>`;}).join("");
+  return `<div class="cmpwrap"><h4>Side-by-side comparison (${m.length} properties)</h4><table class="cmp"><thead>${head}</thead><tbody>${body}</tbody></table><p class="cmpnote">From the 2026 tax roll; taxes are estimates at 2026 rates (lowest highlighted). A different tax doesn't mean a value is right or wrong. Scroll sideways on a phone.</p></div>`;
+}
 let lastLookup=[];
 function getFacts(){return {lives_here:$("#f_lives").checked, age65:$("#f_65").checked, disabled:$("#f_dis").checked, veteran_rating:$("#f_vet").value, value_concern:$("#f_val").checked};}
 async function runLookup(list){
@@ -547,8 +577,8 @@ async function runLookup(list){
   try{
     const r=await fetch("/api/lookup",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({addresses:list,facts:getFacts()})});
     const d=await r.json(); if(!r.ok) throw new Error(d.error||"Lookup failed");
-    lastLookup=d.results; let k=0; d.results.forEach(r=>{if(r.status==="MATCHED"&&r.market&&r.market.location) r._n=++k;}); $("#cards").innerHTML=d.results.map(card).join(""); drawMap($("#lkMap"),propPoints(d.results)); const nt=mapNote(d.results); $("#lkMapNote").textContent=nt; $("#lkMapNote").hidden=!nt;
-    $("#lkNote").hidden=false; $("#lkExplain").hidden=!d.results.some(x=>x.status==="MATCHED");
+    lastLookup=d.results; let k=0; d.results.forEach(r=>{if(r.status==="MATCHED"&&r.market&&r.market.location) r._n=++k;}); const ct=compareTable(d.results); $("#compare").innerHTML=ct; $("#compare").hidden=!ct; $("#cards").innerHTML=d.results.map(card).join(""); drawMap($("#lkMap"),propPoints(d.results)); const nt=mapNote(d.results); $("#lkMapNote").textContent=nt; $("#lkMapNote").hidden=!nt;
+    $("#lkNote").hidden=false; const nm=d.results.filter(x=>x.status==="MATCHED").length; $("#lkExplain").hidden=!nm; $("#lkExplain").textContent=nm>1?"Compare these in the chat":"Explain this in the chat";
   }catch(e){ $("#cards").innerHTML=`<p class="note">The lookup didn't work just now. Try again, or call the Assessor at (504) 754-8811.</p>`; }
   finally{btn.disabled=false}
 }
@@ -568,7 +598,7 @@ async function ask(text, topicHint){
     if(!r.ok){ console.warn("AI answer failed", r.status, data); bot.dataset.diag=JSON.stringify({status:r.status,type:data.type,hint:data.hint}); throw Object.assign(new Error(data.error||"Request failed"),{status:r.status}); }
     const props=(data.properties||[]).filter(p=>p.status==="MATCHED");
     let kk=0; props.forEach(r=>{if(r.market&&r.market.location) r._n=++kk;});
-    body.innerHTML=(props.length?`<div class="cards">${props.map(card).join("")}</div>${kk?`<div class="map small" role="img" aria-label="Map of these properties"></div>`:""}`:"")+render(data.text)+srcList(usedIds(data.text))+(data.truncated?`<p class="note">This answer was cut short. Try asking a narrower question.</p>`:"");
+    body.innerHTML=(props.length>1?compareTable(props):"")+(props.length?`<div class="cards">${props.map(card).join("")}</div>${kk?`<div class="map small" role="img" aria-label="Map of these properties"></div>`:""}`:"")+render(data.text)+srcList(usedIds(data.text))+(data.truncated?`<p class="note">This answer was cut short. Try asking a narrower question.</p>`:"");
     if(kk) drawMap(body.querySelector(".map"),propPoints(props));
     turns.push({role:"assistant",content:data.text});
   }catch(e){
@@ -621,6 +651,7 @@ $("#lkBtn").addEventListener("click",()=>{const list=$("#addrs").value.split(/\n
 $("#cards").addEventListener("click",e=>{const b=e.target.closest(".opt"); if(b&&b.dataset.pid){ const list=$("#addrs").value.split(/\n|;/).map(s=>s.trim()).filter(Boolean); const i=lastLookup.findIndex(x=>x.status==="AMBIGUOUS"&&b.closest(".pcard").querySelector("h4").textContent===x.input); if(i>=0) list[i]=b.dataset.pid; $("#addrs").value=list.join("\n"); runLookup(list);}});
 $("#cards").addEventListener("click",e=>{const b=e.target.closest("[data-plan]"); if(!b) return; ask(`This is my property: ${b.dataset.plan}. Give me the details, my tax evaluation, and what I could do, with steps.`,"prop"); $("#log").scrollIntoView({behavior:"smooth",block:"start"});});
 $("#facts").addEventListener("change",()=>{ if(lastLookup.length){ const list=$("#addrs").value.split(/\n|;/).map(s=>s.trim()).filter(Boolean).slice(0,10); if(list.length) runLookup(list);} });
+$("#lkSample").addEventListener("click",()=>{$("#addrs").value="2413 Nashville Ave\n628 Orange St\n4713 Prytania St"; runLookup($("#addrs").value.split("\n"));});
 $("#lkExplain").addEventListener("click",()=>{const m=lastLookup.filter(x=>x.status==="MATCHED"); if(!m.length) return; ask(`Explain the assessment and estimated tax for ${m.length>1?"these properties and compare them":"this property"}: ${m.map(x=>x.roll_address).join("; ")}`,"prop"); $("#log").scrollIntoView({behavior:"smooth",block:"start"});});
 greet();
 </script>
