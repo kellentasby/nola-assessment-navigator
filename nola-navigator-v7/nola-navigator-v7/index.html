@@ -141,6 +141,9 @@ aside{display:flex;flex-direction:column;gap:16px;min-width:0}
 .office .for{font-size:13.5px;color:var(--muted)}
 .office .num{font-family:var(--mono);font-size:15px;color:var(--c);user-select:all}
 dl.words{margin:0;display:grid;gap:10px;max-height:420px;overflow:auto;padding-right:4px}
+.azrow{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 6px}
+.az{font:inherit;font-size:13px;min-width:30px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);cursor:pointer}
+.az.on{background:var(--prop-c);color:#fff;border-color:var(--prop-c)}
 .dictq{width:100%;box-sizing:border-box;font:inherit;font-size:15px;padding:9px 11px;margin:6px 0 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
 .econ .stat{border:1px solid var(--line);border-left:4px solid var(--bill-c);border-radius:9px;padding:8px 10px;margin:8px 0;background:var(--bg)}
 .econ .stat .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
@@ -292,8 +295,10 @@ details.all summary{font-family:var(--display);font-size:20px;font-weight:700;cu
 
     <div class="panel">
       <h2>Dictionary</h2>
-      <p class="note">Confused by a word? Search it here, or ask the chatbot "What does ___ mean?"</p>
+      <p class="note">Don't know a word? Type it here, tap a letter, or ask the chatbot "What does ___ mean?" Every word is explained in simple language.</p>
       <input id="dictQ" class="dictq" type="search" placeholder="Search words, e.g. millage" aria-label="Search the dictionary">
+      <div class="azrow" id="dictAZ" aria-label="Jump to a letter"></div>
+      <p class="note" id="dictCount"></p>
       <dl class="words" id="dict"></dl>
       <p class="note" id="dictNone" hidden>Not in the dictionary yet. Try asking the chatbot.</p>
     </div>
@@ -463,11 +468,17 @@ $("#econ").innerHTML=ECON.map(e=>`<div class="stat"><div class="top"><span class
 // Dictionary with search
 function drawDict(f){
   const t=(f||"").trim().toLowerCase();
-  const rows=GLOSSARY.filter(([w,d])=>!t||w.toLowerCase().includes(t)||d.toLowerCase().includes(t));
-  $("#dict").innerHTML=rows.map(([w,d,src])=>`<dt>${esc(w)}</dt><dd>${esc(d)} <a class="cite" href="#src-${src}">${src}</a></dd>`).join("");
+  const L=dictLetter;
+  const rows=GLOSSARY.filter(([w,d])=>(!t||w.toLowerCase().includes(t)||d.toLowerCase().includes(t))&&(!L||w[0].toUpperCase()===L)).sort((a,b)=>a[0].localeCompare(b[0]));
+  $("#dict").innerHTML=rows.map(([w,d,src])=>`<dt>${esc(w)}</dt><dd>${esc(d)}${src?` <a class="cite" href="#src-${src}">${src}</a>`:""}</dd>`).join("");
+  $("#dictCount").textContent=`${rows.length} of ${GLOSSARY.length} words`;
   $("#dictNone").hidden=rows.length>0;
 }
-drawDict(""); $("#dictQ").addEventListener("input",e=>drawDict(e.target.value));
+let dictLetter="";
+const letters=[...new Set(GLOSSARY.map(g=>g[0][0].toUpperCase()))].sort();
+$("#dictAZ").innerHTML=`<button type="button" class="az on" data-l="">All</button>`+letters.map(l=>`<button type="button" class="az" data-l="${l}">${l}</button>`).join("");
+$("#dictAZ").addEventListener("click",e=>{const b=e.target.closest(".az"); if(!b) return; dictLetter=b.dataset.l; document.querySelectorAll("#dictAZ .az").forEach(x=>x.classList.toggle("on",x===b)); drawDict($("#dictQ").value);});
+drawDict(""); $("#dictQ").addEventListener("input",e=>{if(dictLetter){dictLetter="";document.querySelectorAll("#dictAZ .az").forEach(x=>x.classList.toggle("on",!x.dataset.l));} drawDict(e.target.value);});
 $("#dict").addEventListener("click",e=>{if(e.target.closest(".cite")) $("details.all").open=true;});
 document.querySelectorAll("[data-about]").forEach(b=>b.addEventListener("click",()=>{ask(b.textContent);$("#log").scrollIntoView({behavior:"smooth",block:"start"})}));
 $("#ledger").innerHTML=KB.map(s=>`<li id="src-${s.id}"><span class="sid">${s.id}</span><a href="${s.url}" target="_blank" rel="noopener">${esc(s.title)}</a><br><span class="d">${esc(s.org)} · ${esc(s.date)}</span></li>`).join("");
